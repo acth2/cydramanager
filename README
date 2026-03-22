@@ -1,6 +1,2 @@
-build:
- (Execute theses commands in the root of the project.)
- - 'meson setup build'
- - 'ninja -C build'
-The compiled binary is located at the new build folder as cydramanager in order to install it in your system do
- - ''
+CydraOS Package manager.
+A database file is needed to track the installed packages with their versions. I hard written the one in CydraOS / CydraLite
