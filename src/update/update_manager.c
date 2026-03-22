@@ -44,3 +44,9 @@ SoftwareDB get_software_database() {
 
     return db;
 }
+/*
+bool apply_software_db(SoftwareDB db) {
+
+    return false;
+}
+*/

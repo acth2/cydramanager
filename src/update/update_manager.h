@@ -14,6 +14,6 @@ typedef struct {
 } SoftwareDB; 
 
 SoftwareDB get_software_database();
-
+//bool apply_software_db(SoftwareDB db);
 
 #endif
