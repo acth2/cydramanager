@@ -1,11 +1,8 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-// #include <string.h>
-
 #include "arguments/arg.h"
 #include "main.h"
 #include "update/update_manager.h"
+#include <curl/curl.h>
 
 int main(int argc, char *argv[]) {
     if (argc > 1) {
@@ -22,10 +19,16 @@ int main(int argc, char *argv[]) {
             }
 
             case ARG_UPDATE: {
-                SoftwareDB db = get_software_database("/etc/cydramanager.d/sdb");
-                if (apply_software_db(db)) {
-                    printf("-> The database have been updated.\n");
+                curl_global_init(CURL_GLOBAL_SSL);
+
+                SoftwareDB db = get_current_database("/etc/cydramanager.d/sdb");
+                if (!apply_software_db(db)) {
+                    printf("Error: The database could not have been updated.\n");
                 }
+
+                get_updated_database(db);
+
+                curl_global_cleanup();
                 break;
             }
 

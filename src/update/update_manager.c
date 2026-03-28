@@ -1,12 +1,15 @@
 #include "update_manager.h"
+#include <curl/curl.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <sys/time.h>
+#include <sys/types.h>
 #include <time.h>
 
-SoftwareDB get_software_database(char* dbPath) {
+SoftwareDB get_current_database(char *dbPath) {
     SoftwareDB db = {0};
 
     FILE *fptr;
@@ -39,15 +42,98 @@ SoftwareDB get_software_database(char* dbPath) {
         i++;
     }
     *(db.software_counter) = i;
-    
+
     db.software_counter = realloc(db.software_counter, sizeof(int) * (i + 1));
-    db.software_map     = realloc(db.software_map, sizeof(SoftwareMap) * (i + 1));
+    db.software_map = realloc(db.software_map, sizeof(SoftwareMap) * (i + 1));
+
+    for (int i = 0; i < *(db.software_counter); i++) {
+        int j = 0;
+        for (int k = 0; db.software_map[i].software_version[k] != '\0'; k++) {
+            if (db.software_map[i].software_version[k] != '\n') {
+                db.software_map[i].software_version[j++] = db.software_map[i].software_version[k];
+            }
+        }
+        db.software_map[i].software_version[j] = '\0';
+    }
+
     printf("-> The database have been loaded.\n");
 
     fclose(fptr);
     free(fileContent);
 
     return db;
+}
+
+SoftwareDB get_updated_database(SoftwareDB old_instance) {
+    SoftwareDB updated_instance = old_instance;
+    char *cache_dir = "/tmp/cydramanager.tmp";
+
+    system("rm -rf /tmp/cydramanager.tmp");
+    if (mkdir(cache_dir, 0777) == -1) {
+        printf(
+            "Error: could not create a temporary directory in /tmp folder.\n");
+        return updated_instance;
+    }
+
+    CURL *curl = curl_easy_init();
+    FILE *file = fopen("/tmp/cydramanager.tmp/versions.tar.gz", "wb");
+
+    if (!curl || !file) {
+        printf("Error: Unexpected behaviour during the update of the "
+               "databases.\n");
+        return updated_instance;
+    }
+
+    curl_easy_setopt(curl, CURLOPT_URL,
+                     "https://github.com/acth2/cydramanager-db/releases/download/13.0/versions.tar.gz");
+
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
+
+    CURLcode cperf = curl_easy_perform(curl);
+    curl_easy_cleanup(curl);
+
+    if (cperf == CURLE_COULDNT_CONNECT) {
+        printf("Error: You are not connected to the internet, the update "
+               "cannot happen.\n");
+        return updated_instance;
+    }
+
+    if (cperf != CURLE_OK) {
+        printf("Error: an unexpected error occured.\n");
+        return updated_instance;
+    }
+    fclose(file);
+
+    if (system("tar -xzf /tmp/cydramanager.tmp/versions.tar.gz -C /tmp/cydramanager.tmp") != 0) {
+        printf("Could not extract the database.\n");
+        return updated_instance;
+    } 
+    printf("-> Downloaded and extracted database.\n");
+
+    for (int i = 0; i < *(old_instance.software_counter); i++) {
+        char full_path[100];
+        strcpy(full_path, "/tmp/cydramanager.tmp/");
+        strcat(full_path, old_instance.software_map[i].software_name);
+
+        FILE *fptr = fopen(full_path, "r");
+        if (fptr == NULL) {
+            printf("Warning: cannot open database file for %s\n", old_instance.software_map[i].software_name);
+            continue;
+        }
+        char version[100];
+        fscanf(fptr, "%s", version);
+
+        if (strcmp(old_instance.software_map[i].software_version, version) == 0) {
+            printf("%s is updated (%s).\n", old_instance.software_map[i].software_name, old_instance.software_map[i].software_version);
+        } else {
+            printf("%s is out to date (%s -> %s).\n", old_instance.software_map[i].software_name, old_instance.software_map[i].software_version, version);
+        }
+
+        fclose(fptr);
+    }
+
+    return updated_instance;
 }
 
 bool apply_software_db(SoftwareDB db) {
@@ -74,14 +160,14 @@ bool apply_software_db(SoftwareDB db) {
         return false;
     }
 
-    for (int i = 0; i <= ( *(db.software_counter) - 1 ); i++) {
+    printf("-> Updating the database.\n");
+    for (int i = 0; i < *(db.software_counter); i++) {
         fprintf(fptr, db.software_map[i].software_name);
         fprintf(fptr, " ");
         fprintf(fptr, db.software_map[i].software_version);
+        fprintf(fptr, "\n");
     }
     fclose(fptr);
 
     return true;
 }
-
-

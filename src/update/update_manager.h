@@ -13,7 +13,8 @@ typedef struct {
     SoftwareMap*  software_map;
 } SoftwareDB; 
 
-SoftwareDB get_software_database(char* db);
+SoftwareDB get_current_database(char* db);
+SoftwareDB get_updated_database(SoftwareDB old_instance); 
 bool apply_software_db(SoftwareDB db);
 
 #endif
