@@ -22,8 +22,10 @@ int main(int argc, char *argv[]) {
             }
 
             case ARG_UPDATE: {
-                SoftwareDB db = get_software_database();
-                apply_software_db(db);
+                SoftwareDB db = get_software_database("/etc/cydramanager.d/sdb");
+                if (apply_software_db(db)) {
+                    printf("-> The database have been updated.\n");
+                }
                 break;
             }
 

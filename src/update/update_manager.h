@@ -13,7 +13,7 @@ typedef struct {
     SoftwareMap*  software_map;
 } SoftwareDB; 
 
-SoftwareDB get_software_database();
-bool create_software_db(SoftwareDB db);
+SoftwareDB get_software_database(char* db);
+bool apply_software_db(SoftwareDB db);
 
 #endif

@@ -6,12 +6,11 @@
 #include <sys/time.h>
 #include <time.h>
 
-// make a database file content into a SoftwareDB variable.
-SoftwareDB get_software_database() {
+SoftwareDB get_software_database(char* dbPath) {
     SoftwareDB db = {0};
 
     FILE *fptr;
-    fptr = fopen("/etc/cydramanager.d/sdb", "r");
+    fptr = fopen(dbPath, "r");
 
     if (fptr == NULL) {
         printf(
@@ -37,15 +36,13 @@ SoftwareDB get_software_database() {
             strcpy(db.software_map[i].software_version, token);
             token = strtok(NULL, separator);
         }
-        printf("Software: %s, Version: %s", db.software_map[i].software_name,
-               db.software_map[i].software_version);
         i++;
     }
     *(db.software_counter) = i;
     
-    printf("Total software: %d\n", *(db.software_counter));
     db.software_counter = realloc(db.software_counter, sizeof(int) * (i + 1));
     db.software_map     = realloc(db.software_map, sizeof(SoftwareMap) * (i + 1));
+    printf("-> The database have been loaded.\n");
 
     fclose(fptr);
     free(fileContent);
@@ -53,8 +50,7 @@ SoftwareDB get_software_database() {
     return db;
 }
 
-// create a new database file and archive the predecessor
-bool create_software_db(SoftwareDB db) {
+bool apply_software_db(SoftwareDB db) {
     struct timeval foo;
     gettimeofday(&foo, NULL);
 
@@ -70,7 +66,6 @@ bool create_software_db(SoftwareDB db) {
         printf("Error: could not rename the old database.\n");
         return false;
     }
-    printf("Renamed old database, creating new one.\n");
 
     FILE *fptr;
     fptr = fopen("/etc/cydramanager.d/sdb", "w");
@@ -83,10 +78,10 @@ bool create_software_db(SoftwareDB db) {
         fprintf(fptr, db.software_map[i].software_name);
         fprintf(fptr, " ");
         fprintf(fptr, db.software_map[i].software_version);
-        printf("Wrote for: %s version %s", db.software_map[i].software_name, db.software_map[i].software_version);
     }
-
     fclose(fptr);
 
-    return false;
+    return true;
 }
+
+
