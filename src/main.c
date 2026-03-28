@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 // #include <string.h>
 
 #include "arguments/arg.h"
@@ -22,8 +23,7 @@ int main(int argc, char *argv[]) {
 
             case ARG_UPDATE: {
                 SoftwareDB db = get_software_database();
-                free(db.software_counter);
-                free(db.software_map);
+                apply_software_db(db);
                 break;
             }
 
