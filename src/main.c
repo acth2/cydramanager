@@ -22,12 +22,14 @@ int main(int argc, char *argv[]) {
                 curl_global_init(CURL_GLOBAL_SSL);
 
                 SoftwareDB db = get_current_database("/etc/cydramanager.d/sdb");
+                UpdatedDB udb = get_updated_database(db);
                 if (!apply_software_db(db)) {
                     printf("Error: The database could not have been updated.\n");
                 }
+                update_package(udb, 0);
 
-                get_updated_database(db);
-
+                free(udb.updated_db.software_map);
+                free(udb.outdated_index);
                 curl_global_cleanup();
                 break;
             }
