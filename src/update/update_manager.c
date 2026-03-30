@@ -8,6 +8,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <time.h>
+#include "../utilities/utils.h"
 
 SoftwareDB get_current_database(char *dbPath) {
     SoftwareDB db = {0};
@@ -21,11 +22,12 @@ SoftwareDB get_current_database(char *dbPath) {
         return db;
     }
 
-    db.software_counter = malloc(sizeof(int) * 1000);
+    db.software_counter = malloc(sizeof(int));
     db.software_map = malloc(sizeof(SoftwareMap) * 1000);
 
     char *fileContent = malloc(10000);
-    fgets(fileContent, 10000, fptr);
+    //send him to debug prison
+    //fgets(fileContent, 10000, fptr);
 
     int i = 0;
     while (fgets(fileContent, 10000, fptr)) {
@@ -43,7 +45,6 @@ SoftwareDB get_current_database(char *dbPath) {
     }
     *(db.software_counter) = i;
 
-    db.software_counter = realloc(db.software_counter, sizeof(int) * (i + 1));
     db.software_map = realloc(db.software_map, sizeof(SoftwareMap) * (i + 1));
 
     for (int i = 0; i < *(db.software_counter); i++) {
@@ -144,7 +145,7 @@ UpdatedDB get_updated_database(SoftwareDB old_instance) {
         updated_instance.outdated_index = outdated_index;
         fclose(fptr);
     }
-    printf("You have %d outdated packages\n",
+    printf("## You have %d outdated packages\n",
            outdated_packages);
 
     return updated_instance;
@@ -154,13 +155,8 @@ bool apply_software_db(SoftwareDB db) {
     struct timeval foo;
     gettimeofday(&foo, NULL);
 
-    char current_time[50];
-    char old_db_path_raw[50] = "/etc/cydramanager.d/sdb";
-    char old_db_path_fused[100] = "";
-
-    sprintf(current_time, "%ld", foo.tv_usec);
-    strcpy(old_db_path_fused, old_db_path_raw);
-    strcat(old_db_path_fused, current_time);
+    char old_db_path_fused[128] = "";
+    snprintf(old_db_path_fused, sizeof(old_db_path_fused), "/etc/cydramanager.d/sdb_%ld_%ld", foo.tv_sec, foo.tv_usec);
 
     if (rename("/etc/cydramanager.d/sdb", old_db_path_fused) != 0) {
         printf("Error: could not rename the old database.\n");
@@ -242,8 +238,64 @@ void update_package(UpdatedDB update_database, int index) {
                update_database.updated_db.software_map[index].software_name);
     }
     char line[512];
-
+    char line_cleaned[512];
+    INSTRUCTION_MODE mode = NONE;
     while (fgets(line, sizeof(line), fptr) != NULL) {
-        printf("%s", line);
+        strcpy(line_cleaned, line);
+
+        if (strcmp(space_clean(line_cleaned), "build['") == 0) {
+            printf("\nNOW BUILD:\n");
+            mode = BUILD;
+            continue;
+        }
+
+        if (strcmp(space_clean(line_cleaned), "install['") == 0) {
+            printf("\nNOW INSTALL:\n");
+            mode = INSTALL;
+            continue;
+        }
+
+        if (strcmp(space_clean(line_cleaned), "dependency['") == 0) {
+            printf("\nNOW DEPENDENCY:\n");
+            mode = DEPENDENCY;
+            continue;
+        }
+
+        if (strcmp(space_clean(line_cleaned), "download['") == 0) {
+            printf("\nNOW DOWNLOAD:\n");
+            mode = DOWNLOAD;
+            continue;
+        }
+
+        if (strcmp(space_clean(line_cleaned), "']") == 0 && mode != NONE) {
+            mode = NONE;
+            continue;
+        }
+
+        switch(mode) {
+            case BUILD: {
+                printf("%s", line);
+                break;
+            }
+
+            case INSTALL: {
+                printf("%s", line);
+                break;
+            }
+
+            case DEPENDENCY: {
+                printf("%s", line);
+                break;
+            }
+
+            case DOWNLOAD: {
+                printf("%s", line);
+                break;
+            }
+
+            case NONE:
+            default:
+                continue;
+        }
     }
 }

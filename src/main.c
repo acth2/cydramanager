@@ -24,7 +24,8 @@ int main(int argc, char *argv[]) {
                 SoftwareDB db = get_current_database("/etc/cydramanager.d/sdb");
                 UpdatedDB udb = get_updated_database(db);
                 if (!apply_software_db(db)) {
-                    printf("Error: The database could not have been updated.\n");
+                   printf("Error: The database could not have been updated.\n");
+                   break;
                 }
                 update_package(udb, 0);
 
