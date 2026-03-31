@@ -182,6 +182,11 @@ bool apply_software_db(SoftwareDB db) {
     return true;
 }
 
+static char build_instructions      [MAXIMUM_LINES][MAXIMUM_LENGTH];
+static char install_instructions    [MAXIMUM_LINES][MAXIMUM_LENGTH];
+static char dependency_instructions [256]          [MAXIMUM_LENGTH];
+static char download_link           [10]           [MAXIMUM_LENGTH];
+
 void update_package(UpdatedDB update_database, int index) {
     if (mkdir("/tmp/cydramanager.tmp/instructions", 0777) == -1) {
         printf("Error: could not create the instructions database.\n");
@@ -239,30 +244,27 @@ void update_package(UpdatedDB update_database, int index) {
     }
     char line[512];
     char line_cleaned[512];
+    int step = 0;
     INSTRUCTION_MODE mode = NONE;
     while (fgets(line, sizeof(line), fptr) != NULL) {
         strcpy(line_cleaned, line);
 
         if (strcmp(space_clean(line_cleaned), "build['") == 0) {
-            printf("\nNOW BUILD:\n");
             mode = BUILD;
             continue;
         }
 
         if (strcmp(space_clean(line_cleaned), "install['") == 0) {
-            printf("\nNOW INSTALL:\n");
             mode = INSTALL;
             continue;
         }
 
         if (strcmp(space_clean(line_cleaned), "dependency['") == 0) {
-            printf("\nNOW DEPENDENCY:\n");
             mode = DEPENDENCY;
             continue;
         }
 
         if (strcmp(space_clean(line_cleaned), "download['") == 0) {
-            printf("\nNOW DOWNLOAD:\n");
             mode = DOWNLOAD;
             continue;
         }
@@ -274,28 +276,37 @@ void update_package(UpdatedDB update_database, int index) {
 
         switch(mode) {
             case BUILD: {
-                printf("%s", line);
+                strcpy(build_instructions[step], line);
+                step++;
                 break;
             }
 
             case INSTALL: {
-                printf("%s", line);
+                strcpy(install_instructions[step], line);
+                step++;
                 break;
             }
 
             case DEPENDENCY: {
-                printf("%s", line);
+                strcpy(dependency_instructions[step], line);
+                step++;
                 break;
             }
 
             case DOWNLOAD: {
-                printf("%s", line);
+                strcpy(download_link[step], line);
+                step++;
                 break;
             }
 
             case NONE:
             default:
+                step = 0;
                 continue;
         }
     }
+
+    printf("%s", download_link[0]);
+    printf("%s", install_instructions[0]);
+    printf("%s", build_instructions[0]);
 }
