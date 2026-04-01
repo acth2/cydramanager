@@ -10,6 +10,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <time.h>
+#include <unistd.h>
 
 SoftwareDB get_current_database(char *dbPath) {
     SoftwareDB db = {0};
@@ -324,6 +325,7 @@ void update_package(UpdatedDB update_database, int index) {
         }
     }
 
+    // download_link
     int i = 0;
     while (true) {
         if (strlen(download_link[i]) <= 0) {
@@ -348,7 +350,7 @@ void update_package(UpdatedDB update_database, int index) {
                    "package %s.\n", software_name);
             break;
         }
-        printf("Starting the update of the pacakge %s\n", software_name);
+        printf("Starting the update of the package %s\n", software_name);
 
         curl_easy_setopt(curl, CURLOPT_URL, download_link[i]);
 
@@ -394,7 +396,7 @@ void update_package(UpdatedDB update_database, int index) {
         }
         closedir(dir);
 
-        printf("%s\n", archive_directory);
+        chdir(archive_directory);
 
         i++;
         if (i >= 500) {
@@ -402,4 +404,46 @@ void update_package(UpdatedDB update_database, int index) {
             break;
         }
     }
-}
+
+    // build_instructions
+    i = 0;
+    while (true) {
+        if (strlen(build_instructions[i]) <= 0) {
+            break;
+        }
+
+        replace_proc(build_instructions[i]);
+
+        if (system(build_instructions[i]) != 0) {
+            printf("Error at build instruction numero %d\n", i);
+            break;
+        }
+        printf("Success at executing %s at build step.\n", build_instructions[i]);
+
+        i++;
+        if (i >= 500) {
+            printf("Warning: Loop max use reached (500).\n");
+            break;
+        }
+    }
+
+    i = 0;
+    while (true) {
+        if (strlen(install_instructions[i]) <= 0) {
+            break;
+        }
+
+        replace_proc(install_instructions[i]);
+
+        if (system(install_instructions[i]) != 0) {
+            printf("Error at build instruction numero %d\n", i);
+        }
+        printf("Success at executing %s at install step.\n", install_instructions[i]);
+
+        i++;
+        if (i >= 500) {
+            printf("Warning: Loop max use reached (500).\n");
+            break;
+        }
+    }
+} 
