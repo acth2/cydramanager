@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <dirent.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <time.h>
@@ -325,16 +326,17 @@ void update_package(UpdatedDB update_database, int index) {
 
     int i = 0;
     while (true) {
-        if (strlen(download_link[i]) == 0) {
+        if (strlen(download_link[i]) <= 0) {
             i = 0;
             break;
         }
 
         char archive_name[250];
+        char *software_name = update_database.updated_db.software_map[index].software_name;
         snprintf(
             archive_name, sizeof(archive_name),
             "/tmp/cydramanager.tmp/instructions/%s_space/package_archive_%d",
-            update_database.updated_db.software_map[index].software_name, i);
+            software_name, i);
 
         download_link[i][strcspn(download_link[i], "\n")] = '\0';
 
@@ -343,10 +345,10 @@ void update_package(UpdatedDB update_database, int index) {
 
         if (!curl || !file) {
             printf("Error: Unexpected behaviour during the update of the "
-                   "package %s.\n", update_database.updated_db.software_map[index].software_name);
+                   "package %s.\n", software_name);
             break;
         }
-        printf("Starting the update of the pacakge %s\n", update_database.updated_db.software_map[index].software_name);
+        printf("Starting the update of the pacakge %s\n", software_name);
 
         curl_easy_setopt(curl, CURLOPT_URL, download_link[i]);
 
@@ -367,7 +369,32 @@ void update_package(UpdatedDB update_database, int index) {
             break;
         }
         fclose(file);
-        printf("Downloaded the archive for %s\n", update_database.updated_db.software_map[index].software_name);
+        printf("Downloaded the archive for %s\n", software_name);
+
+        char extract_cmd[412];
+        snprintf(extract_cmd, sizeof(extract_cmd), "tar xf %s -C /tmp/cydramanager.tmp/instructions/%s_space", archive_name, software_name);
+        if (system(extract_cmd) != 0) {
+            printf("Error: Could not extract the sources archive for %s\n", software_name);
+            break;
+        }
+
+        char archive_directory[512];
+        char archive_space[256];
+        snprintf(archive_space, sizeof(archive_space), "/tmp/cydramanager.tmp/instructions/%s_space", software_name);
+
+        DIR *dir = opendir(archive_space);
+        struct dirent *entry;
+
+        while ( (entry = readdir(dir)) != NULL) {
+            if (entry->d_name[0] == '.') {
+                continue;
+            }
+
+            snprintf(archive_directory, sizeof(archive_directory), "%s/%s", archive_space, entry->d_name);
+        }
+        closedir(dir);
+
+        printf("%s\n", archive_directory);
 
         i++;
         if (i >= 500) {
