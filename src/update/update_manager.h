@@ -5,6 +5,7 @@
 
 #define MAXIMUM_LINES  512
 #define MAXIMUM_LENGTH 256
+bool    DEBUG        = false;
 
 typedef enum {
     BUILD,

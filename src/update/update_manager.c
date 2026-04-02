@@ -413,6 +413,7 @@ void update_package(UpdatedDB update_database, int index) {
         }
 
         replace_proc(build_instructions[i]);
+        if (!DEBUG) strcat(build_instructions[i], " > /dev/null 2>&1");
 
         if (system(build_instructions[i]) != 0) {
             printf("Error at build instruction numero %d\n", i);
@@ -427,6 +428,7 @@ void update_package(UpdatedDB update_database, int index) {
         }
     }
 
+    // install_instructions
     i = 0;
     while (true) {
         if (strlen(install_instructions[i]) <= 0) {
@@ -434,6 +436,7 @@ void update_package(UpdatedDB update_database, int index) {
         }
 
         replace_proc(install_instructions[i]);
+        if (!DEBUG) strcat(build_instructions[i], " > /dev/null 2>&1");
 
         if (system(install_instructions[i]) != 0) {
             printf("Error at build instruction numero %d\n", i);

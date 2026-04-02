@@ -31,6 +31,7 @@ int main(int argc, char *argv[]) {
 
                 free(udb.updated_db.software_map);
                 free(udb.outdated_index);
+
                 curl_global_cleanup();
                 break;
             }
