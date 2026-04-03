@@ -330,6 +330,7 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
 
     // download_link
     int i = 0;
+    char archive_directory[512];
     while (true) {
         if (strlen(download_link[i]) <= 0) {
             i = 0;
@@ -388,7 +389,6 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
             break;
         }
 
-        char archive_directory[512];
         char archive_space[256];
         snprintf(archive_space, sizeof(archive_space),
                  "/tmp/cydramanager.tmp/instructions/%s_space", software_name);
@@ -466,6 +466,15 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
         build_instructions[i][strcspn(build_instructions[i], "\n")] = '\0';
         if (!DEBUG)
             strcat(build_instructions[i], " > /dev/null 2>&1");
+
+        if (strstr(build_instructions[i], "cd ")) {
+            char *cd_directory;
+            char full_directory_path [1024];
+            cd_directory = strtok(build_instructions[i], " ");
+            cd_directory = strtok(NULL, " ");
+            snprintf(full_directory_path, sizeof(full_directory_path), "%s/%s", archive_directory, cd_directory);
+            chdir(full_directory_path);
+        }
 
         if (system(build_instructions[i]) != 0) {
             printf(
