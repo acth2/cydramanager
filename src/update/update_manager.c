@@ -1,12 +1,12 @@
 #include "update_manager.h"
 #include "../utilities/utils.h"
 #include <curl/curl.h>
+#include <dirent.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <dirent.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <time.h>
@@ -192,51 +192,53 @@ static char install_instructions[MAXIMUM_LINES][MAXIMUM_LENGTH];
 static char dependency_instructions[256][MAXIMUM_LENGTH];
 static char download_link[10][MAXIMUM_LENGTH];
 
-void update_package(UpdatedDB update_database, int index) {
-    if (mkdir("/tmp/cydramanager.tmp/instructions", 0777) == -1) {
+void update_package(UpdatedDB update_database, int index, bool dependency) {
+    if (mkdir("/tmp/cydramanager.tmp/instructions", 0777) == -1 || dependency) {
         printf("Error: could not create the instructions database.\n");
         return;
     }
 
-    CURL *curl = curl_easy_init();
-    FILE *file =
-        fopen("/tmp/cydramanager.tmp/instructions/instructions.tar.gz", "wb");
+    if (!dependency) {
+        CURL *curl = curl_easy_init();
+        FILE *file = fopen(
+            "/tmp/cydramanager.tmp/instructions/instructions.tar.gz", "wb");
 
-    if (!curl || !file) {
-        printf("Error: Unexpected behaviour during the update of the "
-               "instructions databases.\n");
-        return;
+        if (!curl || !file) {
+            printf("Error: Unexpected behaviour during the update of the "
+                   "instructions databases.\n");
+            return;
+        }
+
+        curl_easy_setopt(curl, CURLOPT_URL,
+                         "https://github.com/acth2/cydramanager-db/releases/"
+                         "download/13.0/instructions.tar.gz");
+
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
+
+        CURLcode cperf = curl_easy_perform(curl);
+        curl_easy_cleanup(curl);
+
+        if (cperf == CURLE_COULDNT_CONNECT) {
+            printf("Error: You are not connected to the internet, the update "
+                   "cannot happen.\n");
+            return;
+        }
+
+        if (cperf != CURLE_OK) {
+            printf("Error: an unexpected error occured.\n");
+            return;
+        }
+        fclose(file);
+
+        if (system("tar -xzf "
+                   "/tmp/cydramanager.tmp/instructions/instructions.tar.gz -C "
+                   "/tmp/cydramanager.tmp/instructions") != 0) {
+            printf("Error: Could not extract the instructions database.\n");
+            return;
+        }
+        printf("-> Downloaded and extracted the instructions database.\n");
     }
-
-    curl_easy_setopt(curl, CURLOPT_URL,
-                     "https://github.com/acth2/cydramanager-db/releases/"
-                     "download/13.0/instructions.tar.gz");
-
-    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
-
-    CURLcode cperf = curl_easy_perform(curl);
-    curl_easy_cleanup(curl);
-
-    if (cperf == CURLE_COULDNT_CONNECT) {
-        printf("Error: You are not connected to the internet, the update "
-               "cannot happen.\n");
-        return;
-    }
-
-    if (cperf != CURLE_OK) {
-        printf("Error: an unexpected error occured.\n");
-        return;
-    }
-    fclose(file);
-
-    if (system("tar -xzf "
-               "/tmp/cydramanager.tmp/instructions/instructions.tar.gz -C "
-               "/tmp/cydramanager.tmp/instructions") != 0) {
-        printf("Error: Could not extract the instructions database.\n");
-        return;
-    }
-    printf("-> Downloaded and extracted the instructions database.\n");
 
     char instructions_path[250];
     strcpy(instructions_path, "/tmp/cydramanager.tmp/instructions/");
@@ -334,7 +336,8 @@ void update_package(UpdatedDB update_database, int index) {
         }
 
         char archive_name[250];
-        char *software_name = update_database.updated_db.software_map[index].software_name;
+        char *software_name =
+            update_database.updated_db.software_map[index].software_name;
         snprintf(
             archive_name, sizeof(archive_name),
             "/tmp/cydramanager.tmp/instructions/%s_space/package_archive_%d",
@@ -347,7 +350,8 @@ void update_package(UpdatedDB update_database, int index) {
 
         if (!curl || !file) {
             printf("Error: Unexpected behaviour during the update of the "
-                   "package %s.\n", software_name);
+                   "package %s.\n",
+                   software_name);
             break;
         }
         printf("Starting the update of the package %s\n", software_name);
@@ -374,25 +378,30 @@ void update_package(UpdatedDB update_database, int index) {
         printf("Downloaded the archive for %s\n", software_name);
 
         char extract_cmd[412];
-        snprintf(extract_cmd, sizeof(extract_cmd), "tar xf %s -C /tmp/cydramanager.tmp/instructions/%s_space", archive_name, software_name);
+        snprintf(extract_cmd, sizeof(extract_cmd),
+                 "tar xf %s -C /tmp/cydramanager.tmp/instructions/%s_space",
+                 archive_name, software_name);
         if (system(extract_cmd) != 0) {
-            printf("Error: Could not extract the sources archive for %s\n", software_name);
+            printf("Error: Could not extract the sources archive for %s\n",
+                   software_name);
             break;
         }
 
         char archive_directory[512];
         char archive_space[256];
-        snprintf(archive_space, sizeof(archive_space), "/tmp/cydramanager.tmp/instructions/%s_space", software_name);
+        snprintf(archive_space, sizeof(archive_space),
+                 "/tmp/cydramanager.tmp/instructions/%s_space", software_name);
 
         DIR *dir = opendir(archive_space);
         struct dirent *entry;
 
-        while ( (entry = readdir(dir)) != NULL) {
+        while ((entry = readdir(dir)) != NULL) {
             if (entry->d_name[0] == '.') {
                 continue;
             }
 
-            snprintf(archive_directory, sizeof(archive_directory), "%s/%s", archive_space, entry->d_name);
+            snprintf(archive_directory, sizeof(archive_directory), "%s/%s",
+                     archive_space, entry->d_name);
         }
         closedir(dir);
 
@@ -405,8 +414,47 @@ void update_package(UpdatedDB update_database, int index) {
         }
     }
 
-    // build_instructions
     bool DEBUG = false;
+    i = 0;
+    
+    // dependency_instructions
+    while (true) {
+        if (strlen(dependency_instructions[i]) <= 0) {
+            break;
+        }
+
+        dependency_instructions[i][strcspn(dependency_instructions[i], "\n")] =
+            '\0';
+        char *token;
+        char *separator = " ";
+        for (int j = 0; j >= *(update_database.updated_db.software_counter);
+             j++) {
+            token = strtok(dependency_instructions[i], separator);
+            if (strcmp(token, update_database.updated_db.software_map[j]
+                                  .software_name) != 0)
+                continue;
+            token = strtok(NULL, separator);
+            if (strcmp(token, update_database.updated_db.software_map[j]
+                                  .software_version) == 0) {
+                printf(
+                    "Dependency %s already up to date, skipping\n",
+                    update_database.updated_db.software_map[j].software_name);
+                break;
+            }
+
+            printf("Updating dependency %s\n",
+                   update_database.updated_db.software_map[j].software_name);
+            update_package(update_database, j, true);
+        }
+
+        i++;
+        if (i >= 500) {
+            printf("Warning: Loop max use reached (500).\n");
+            break;
+        }
+    }
+
+    // build_instructions
     i = 0;
     while (true) {
         if (strlen(build_instructions[i]) <= 0) {
@@ -415,13 +463,15 @@ void update_package(UpdatedDB update_database, int index) {
 
         replace_proc(build_instructions[i]);
         build_instructions[i][strcspn(build_instructions[i], "\n")] = '\0';
-        if (!DEBUG) strcat(build_instructions[i], " > /dev/null 2>&1");
+        if (!DEBUG)
+            strcat(build_instructions[i], " > /dev/null 2>&1");
 
         if (system(build_instructions[i]) != 0) {
             printf("Error at build instruction numero %d\n", i);
             break;
         }
-        printf("Success at executing %s at build step.\n", build_instructions[i]);
+        printf("Success at executing %s at build step.\n",
+               build_instructions[i]);
 
         i++;
         if (i >= 500) {
@@ -439,12 +489,14 @@ void update_package(UpdatedDB update_database, int index) {
 
         replace_proc(install_instructions[i]);
         install_instructions[i][strcspn(install_instructions[i], "\n")] = '\0';
-        if (!DEBUG) strcat(install_instructions[i], " > /dev/null 2>&1");
+        if (!DEBUG)
+            strcat(install_instructions[i], " > /dev/null 2>&1");
 
         if (system(install_instructions[i]) != 0) {
             printf("Error at build instruction numero %d\n", i);
         }
-        printf("Success at executing %s at install step.\n", install_instructions[i]);
+        printf("Success at executing %s at install step.\n",
+               install_instructions[i]);
 
         i++;
         if (i >= 500) {
@@ -452,4 +504,4 @@ void update_package(UpdatedDB update_database, int index) {
             break;
         }
     }
-} 
+}

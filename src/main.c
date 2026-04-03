@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
                    printf("Error: The database could not have been updated.\n");
                    break;
                 }
-                update_package(udb, 76);
+                update_package(udb, 76, false);
 
                 free(udb.updated_db.software_map);
                 free(udb.outdated_index);

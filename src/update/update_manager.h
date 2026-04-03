@@ -31,7 +31,7 @@ typedef struct {
 
 SoftwareDB get_current_database(char* db);
 UpdatedDB get_updated_database(SoftwareDB old_instance);
-void update_package(UpdatedDB package, int index);
+void update_package(UpdatedDB package, int index, bool dependency);
 bool apply_software_db(SoftwareDB db);
 
 #endif
