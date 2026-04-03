@@ -1,8 +1,10 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include "arguments/arg.h"
 #include "main.h"
 #include "update/update_manager.h"
 #include <curl/curl.h>
+#include <stdlib.h>
 
 int main(int argc, char *argv[]) {
     if (argc > 1) {
@@ -27,8 +29,12 @@ int main(int argc, char *argv[]) {
                    printf("Error: The database could not have been updated.\n");
                    break;
                 }
-                update_package(udb, 76, false);
 
+                for (int i = 0; i < udb.outdated_size; i++) {
+                    int index = udb.outdated_index[i];
+                    update_package(udb, index, false);
+                }
+                               
                 free(udb.updated_db.software_map);
                 free(udb.outdated_index);
 

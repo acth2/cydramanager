@@ -121,6 +121,8 @@ UpdatedDB get_updated_database(SoftwareDB old_instance) {
     printf("-> Downloaded and extracted database.\n");
 
     int outdated_packages = 0;
+    int *outdated_index =
+        malloc(*(old_instance.software_counter) * sizeof(int));
     for (int i = 0; i < *(old_instance.software_counter); i++) {
         char full_path[100];
         strcpy(full_path, "/tmp/cydramanager.tmp/");
@@ -133,23 +135,22 @@ UpdatedDB get_updated_database(SoftwareDB old_instance) {
             continue;
         }
         char version[100];
-        int *outdated_index =
-            malloc(*(old_instance.software_counter) * sizeof(int));
         fscanf(fptr, "%s", version);
 
         if (strcmp(old_instance.software_map[i].software_version, version) !=
             0) {
+            outdated_index[outdated_packages] = i;
             outdated_packages++;
-            outdated_index[outdated_packages - 1] = i;
         }
         strcpy(updated_instance.updated_db.software_map[i].software_version,
                version);
         strcpy(updated_instance.updated_db.software_map[i].software_name,
                old_instance.software_map[i].software_name);
 
-        updated_instance.outdated_index = outdated_index;
         fclose(fptr);
     }
+    updated_instance.outdated_index = outdated_index;
+    updated_instance.outdated_size  = outdated_packages;
     printf("## You have %d outdated packages\n", outdated_packages);
 
     return updated_instance;
@@ -416,7 +417,7 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
 
     bool DEBUG = false;
     i = 0;
-    
+
     // dependency_instructions
     while (true) {
         if (strlen(dependency_instructions[i]) <= 0) {
@@ -467,7 +468,9 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
             strcat(build_instructions[i], " > /dev/null 2>&1");
 
         if (system(build_instructions[i]) != 0) {
-            printf("Error at build instructions numero %d for %s\n", i, update_database.updated_db.software_map[index].software_name);
+            printf(
+                "Error at build instructions numero %d for %s\n", i,
+                update_database.updated_db.software_map[index].software_name);
             break;
         }
         printf("Success at executing %s at build step.\n",
@@ -493,7 +496,9 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
             strcat(install_instructions[i], " > /dev/null 2>&1");
 
         if (system(install_instructions[i]) != 0) {
-            printf("Error at install instructions numero %d for %s\n", i, update_database.updated_db.software_map[index].software_name);
+            printf(
+                "Error at install instructions numero %d for %s\n", i,
+                update_database.updated_db.software_map[index].software_name);
             break;
         }
         printf("Success at executing %s at install step.\n",

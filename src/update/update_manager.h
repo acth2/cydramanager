@@ -26,6 +26,7 @@ typedef struct {
 
 typedef struct {
     int*       outdated_index;
+    int        outdated_size;
     SoftwareDB updated_db;
 } UpdatedDB;
 
