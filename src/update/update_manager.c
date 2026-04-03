@@ -150,7 +150,7 @@ UpdatedDB get_updated_database(SoftwareDB old_instance) {
         fclose(fptr);
     }
     updated_instance.outdated_index = outdated_index;
-    updated_instance.outdated_size  = outdated_packages;
+    updated_instance.outdated_size = outdated_packages;
     printf("## You have %d outdated packages\n", outdated_packages);
 
     return updated_instance;
@@ -194,12 +194,12 @@ static char dependency_instructions[256][MAXIMUM_LENGTH];
 static char download_link[10][MAXIMUM_LENGTH];
 
 void update_package(UpdatedDB update_database, int index, bool dependency) {
-    if (mkdir("/tmp/cydramanager.tmp/instructions", 0777) == -1 && !dependency) {
-        printf("Error: could not create the instructions database.\n");
-        return;
-    }
-
     if (!dependency) {
+        if (mkdir("/tmp/cydramanager.tmp/instructions", 0777) == -1) {
+            printf("Error: could not create the instructions database.\n");
+            return;
+        }
+
         CURL *curl = curl_easy_init();
         FILE *file = fopen(
             "/tmp/cydramanager.tmp/instructions/instructions.tar.gz", "wb");
@@ -469,10 +469,11 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
 
         if (strstr(build_instructions[i], "cd ")) {
             char *cd_directory;
-            char full_directory_path [1024];
+            char full_directory_path[1024];
             cd_directory = strtok(build_instructions[i], " ");
             cd_directory = strtok(NULL, " ");
-            snprintf(full_directory_path, sizeof(full_directory_path), "%s/%s", archive_directory, cd_directory);
+            snprintf(full_directory_path, sizeof(full_directory_path), "%s/%s",
+                     archive_directory, cd_directory);
             chdir(full_directory_path);
         }
 

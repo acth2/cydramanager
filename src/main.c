@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
 
                 for (int i = 0; i < udb.outdated_size; i++) {
                     int index = udb.outdated_index[i];
-                    update_package(udb, index, false);
+                    update_package(udb, index, i <= 0 ? false : true);
                 }
                                
                 free(udb.updated_db.software_map);
