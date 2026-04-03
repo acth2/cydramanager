@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+#include "../arguments/debug/debug.h"
 
 SoftwareDB get_current_database(char *dbPath) {
     SoftwareDB db = {0};
@@ -415,7 +416,6 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
         }
     }
 
-    bool DEBUG = false;
     i = 0;
 
     // dependency_instructions
@@ -464,7 +464,7 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
 
         replace_proc(build_instructions[i]);
         build_instructions[i][strcspn(build_instructions[i], "\n")] = '\0';
-        if (!DEBUG)
+        if (!is_debug())
             strcat(build_instructions[i], " > /dev/null 2>&1");
 
         if (strstr(build_instructions[i], "cd ")) {
@@ -477,14 +477,14 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
             chdir(full_directory_path);
         }
 
-        if (system(build_instructions[i]) != 0) {
+        if (system(build_instructions[i]) != 0 && is_debug()) {
             printf(
                 "Error at build instructions numero %d for %s\n", i,
                 update_database.updated_db.software_map[index].software_name);
             break;
         }
-        printf("Success at executing %s at build step.\n",
-               build_instructions[i]);
+
+        if (is_debug()) printf("Success at executing %s at build step.\n", build_instructions[i]);
 
         i++;
         if (i >= 500) {
@@ -502,17 +502,16 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
 
         replace_proc(install_instructions[i]);
         install_instructions[i][strcspn(install_instructions[i], "\n")] = '\0';
-        if (!DEBUG)
+        if (!is_debug())
             strcat(install_instructions[i], " > /dev/null 2>&1");
 
-        if (system(install_instructions[i]) != 0) {
+        if (system(install_instructions[i]) != 0 && is_debug()) {
             printf(
                 "Error at install instructions numero %d for %s\n", i,
                 update_database.updated_db.software_map[index].software_name);
             break;
         }
-        printf("Success at executing %s at install step.\n",
-               install_instructions[i]);
+        if (is_debug()) printf("Success at executing %s at install step.\n", install_instructions[i]);
 
         i++;
         if (i >= 500) {
@@ -520,4 +519,6 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
             break;
         }
     }
+
+    printf("Software %s updated.\n", update_database.updated_db.software_map[index].software_name);
 }

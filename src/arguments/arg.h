@@ -8,13 +8,16 @@ static const char *help_args[] =    { "--help",    "-help",    "help",    "-h" }
 static const char *update_args[] =  { "--update",  "-update",  "update",  "-u" };
 static const char *version_args[] = { "--version", "-version", "version", "-v" };
 
+static const char *debug_args[] =   { "--debug",   "-debug",              "-d" };
 enum ARG {
-    ARG_UNK,
-    ARG_DEFAULT,
+    UNK,
+    DEFAULT,
 
-    ARG_HELP,
-    ARG_UPDATE,
-    ARG_VERSION
+    HELP,
+    UPDATE,
+    VERSION,
+
+    ARG_DEBUG
 };
 
 static bool CONTAINS_IMPL(const char *arg, const char *options[], size_t n) {
@@ -27,12 +30,14 @@ static bool CONTAINS_IMPL(const char *arg, const char *options[], size_t n) {
 
 static inline enum ARG arg2enum(const char *arg) {
     if (contains(arg, help_args))
-        return ARG_HELP;
+        return HELP;
     if (contains(arg, update_args))
-        return ARG_UPDATE;
+        return UPDATE;
     if (contains(arg, version_args))
-        return ARG_VERSION;
-    return ARG_UNK;
+        return VERSION;
+    if (contains(arg, debug_args))
+        return ARG_DEBUG;
+    return UNK;
 }
 
 #endif

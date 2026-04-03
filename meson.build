@@ -19,7 +19,10 @@ executable(
     'cydramanager',
     [
         'src/main.c',
-        'src/update/update_manager.c'
+        'src/update/update_manager.c',
+        'src/arguments/debug/debug.c',
+        'src/install/install_manager.c',
+        'src/uninstall/uninstall_manager.c'
     ],
     dependencies: [ curl_dep ],
     include_directories: include_directories('.'),
