@@ -467,7 +467,7 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
             strcat(build_instructions[i], " > /dev/null 2>&1");
 
         if (system(build_instructions[i]) != 0) {
-            printf("Error at build instruction numero %d\n", i);
+            printf("Error at build instructions numero %d for %s\n", i, update_database.updated_db.software_map[index].software_name);
             break;
         }
         printf("Success at executing %s at build step.\n",
@@ -493,7 +493,8 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
             strcat(install_instructions[i], " > /dev/null 2>&1");
 
         if (system(install_instructions[i]) != 0) {
-            printf("Error at build instruction numero %d\n", i);
+            printf("Error at install instructions numero %d for %s\n", i, update_database.updated_db.software_map[index].software_name);
+            break;
         }
         printf("Success at executing %s at install step.\n",
                install_instructions[i]);
