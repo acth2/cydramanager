@@ -194,7 +194,7 @@ static char dependency_instructions[256][MAXIMUM_LENGTH];
 static char download_link[10][MAXIMUM_LENGTH];
 
 void update_package(UpdatedDB update_database, int index, bool dependency) {
-    if (mkdir("/tmp/cydramanager.tmp/instructions", 0777) == -1 || dependency) {
+    if (mkdir("/tmp/cydramanager.tmp/instructions", 0777) == -1 && !dependency) {
         printf("Error: could not create the instructions database.\n");
         return;
     }
