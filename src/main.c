@@ -8,6 +8,8 @@
 #include "arguments/debug/debug.h"
 
 int main(int argc, char *argv[]) {
+    curl_global_init(CURL_GLOBAL_SSL);
+
     if (argc > 1) {
         for (int i = 1; i <argc; i++) {
             if (arg2enum(argv[i]) == ARG_DEBUG) {
@@ -28,8 +30,6 @@ int main(int argc, char *argv[]) {
             }
 
             case UPDATE: {
-                curl_global_init(CURL_GLOBAL_SSL);
-
                 SoftwareDB db = get_current_database("/etc/cydramanager.d/sdb");
                 UpdatedDB udb = get_updated_database(db);
                 if (!apply_software_db(db)) {
@@ -44,8 +44,14 @@ int main(int argc, char *argv[]) {
                                
                 free(udb.updated_db.software_map);
                 free(udb.outdated_index);
+                break;
+            }
 
-                curl_global_cleanup();
+            case INSTALL: {
+                break;
+            }
+
+            case UNINSTALL: {
                 break;
             }
 
@@ -59,6 +65,8 @@ int main(int argc, char *argv[]) {
                 break;
             }
         }
+        printf("test\n");
+        curl_global_cleanup();
         return 0;
     }
     printf("Use --help to see available options.\n");

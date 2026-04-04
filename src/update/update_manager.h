@@ -6,14 +6,6 @@
 #define MAXIMUM_LINES  512
 #define MAXIMUM_LENGTH 256
 
-typedef enum {
-    BUILD,
-    INSTALL,
-    DEPENDENCY,
-    DOWNLOAD,
-    NONE
-} INSTRUCTION_MODE;
-
 typedef struct {
     char software_name    [100];
     char software_version [100];

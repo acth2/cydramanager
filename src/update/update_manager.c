@@ -1,4 +1,5 @@
 #include "update_manager.h"
+#include "../arguments/debug/debug.h"
 #include "../utilities/utils.h"
 #include <curl/curl.h>
 #include <dirent.h>
@@ -11,7 +12,6 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
-#include "../arguments/debug/debug.h"
 
 SoftwareDB get_current_database(char *dbPath) {
     SoftwareDB db = {0};
@@ -193,6 +193,8 @@ static char build_instructions[MAXIMUM_LINES][MAXIMUM_LENGTH];
 static char install_instructions[MAXIMUM_LINES][MAXIMUM_LENGTH];
 static char dependency_instructions[256][MAXIMUM_LENGTH];
 static char download_link[10][MAXIMUM_LENGTH];
+
+typedef enum { BUILD, INSTALL, DEPENDENCY, DOWNLOAD, NONE } INSTRUCTION_MODE;
 
 void update_package(UpdatedDB update_database, int index, bool dependency) {
     if (!dependency) {
@@ -484,7 +486,9 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
             break;
         }
 
-        if (is_debug()) printf("Success at executing %s at build step.\n", build_instructions[i]);
+        if (is_debug())
+            printf("Success at executing %s at build step.\n",
+                   build_instructions[i]);
 
         i++;
         if (i >= 500) {
@@ -511,7 +515,9 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
                 update_database.updated_db.software_map[index].software_name);
             break;
         }
-        if (is_debug()) printf("Success at executing %s at install step.\n", install_instructions[i]);
+        if (is_debug())
+            printf("Success at executing %s at install step.\n",
+                   install_instructions[i]);
 
         i++;
         if (i >= 500) {
@@ -520,5 +526,6 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
         }
     }
 
-    printf("Software %s updated.\n", update_database.updated_db.software_map[index].software_name);
+    printf("Software %s updated.\n",
+           update_database.updated_db.software_map[index].software_name);
 }
