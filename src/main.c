@@ -65,7 +65,6 @@ int main(int argc, char *argv[]) {
                 break;
             }
         }
-        printf("test\n");
         curl_global_cleanup();
         return 0;
     }

@@ -2,19 +2,10 @@
 #define UPDATE_MANAGER_H
 
 #include <stdbool.h>
+#include "../utilities/software.h"
 
 #define MAXIMUM_LINES  512
 #define MAXIMUM_LENGTH 256
-
-typedef struct {
-    char software_name    [100];
-    char software_version [100];
-} SoftwareMap;
-
-typedef struct {
-    int*          software_counter;
-    SoftwareMap*  software_map;
-} SoftwareDB;
 
 typedef struct {
     int*       outdated_index;
