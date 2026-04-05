@@ -2,7 +2,13 @@
 #define INSTALL_MANAGER_H
 
 #include "src/utilities/software.h"
+#include <stdbool.h>
 
-SoftwareDB get_deployable_softwares();
+typedef struct {
+    SoftwareDB software_database;
+    bool return_error;
+} InstallDB;
+
+bool install_software(char *package_name);
 
 #endif
