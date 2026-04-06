@@ -55,7 +55,7 @@ bool install_software(char *package_name, bool dependency) {
                package_name);
         return false;
     }
-    printf("-> Getting the informations of the dependency %s from the current "
+    printf("-> Getting the informations of the package %s from the current "
            "mirror.\n",
            package_name);
 
@@ -92,11 +92,33 @@ bool install_software(char *package_name, bool dependency) {
                 "current mirror.\n");
             return false;
         } else {
-            printf("Warning: The dependency %s is not found in the current mirror\n", package_name);
+            printf("Warning: The dependency %s is not found in the current "
+                   "mirror\n",
+                   package_name);
         }
     }
 
     printf("## Package %s, version %s found.\n", package_name, package_version);
+
+    FILE *user_software_database = fopen("/etc/cydramanager.d/usdb", "r");
+    char buffer[512];
+    char *current_scope;
+
+    while (fgets(buffer, sizeof(buffer), user_software_database)) {
+        if (strstr(buffer, package_name) != 0) {
+            current_scope = strtok(buffer, " ");
+            current_scope = strtok(NULL, " ");
+
+            current_scope[strcspn(current_scope, "\n")] = '\0';
+            if (strcmp(current_scope, package_version) == 0) {
+                printf("The package %s is already installed and updated on your system.\n", package_name);
+                return true;
+            }
+            printf("The package %s is already installed but not updated. It will be updated.\n", package_name);
+        }
+    }
+    fclose(user_software_database);
+
     FILE *instructions_file = fopen(package_instructions_path, "wb");
     CURL *instructions_curl = curl_easy_init();
     char instructions_link[512] = "";
@@ -221,10 +243,9 @@ bool install_software(char *package_name, bool dependency) {
         }
 
         char archive_name[250];
-        snprintf(
-            archive_name, sizeof(archive_name),
-            "/tmp/cydramanager.tmp/%s_space/package_archive_%d",
-            package_name, i);
+        snprintf(archive_name, sizeof(archive_name),
+                 "/tmp/cydramanager.tmp/%s_space/package_archive_%d",
+                 package_name, i);
 
         download_link[i][strcspn(download_link[i], "\n")] = '\0';
 
@@ -262,8 +283,8 @@ bool install_software(char *package_name, bool dependency) {
 
         char extract_cmd[412];
         snprintf(extract_cmd, sizeof(extract_cmd),
-                 "tar xf %s -C /tmp/cydramanager.tmp/%s_space",
-                 archive_name, package_name);
+                 "tar xf %s -C /tmp/cydramanager.tmp/%s_space", archive_name,
+                 package_name);
         if (system(extract_cmd) != 0) {
             printf("Error: Could not extract the sources archive for %s\n",
                    package_name);
@@ -304,7 +325,8 @@ bool install_software(char *package_name, bool dependency) {
             break;
         }
 
-        printf("-> Installing dependency %s for the package %s\n", dependency_instructions[i], package_name);
+        printf("-> Installing dependency %s for the package %s\n",
+               dependency_instructions[i], package_name);
         install_software(dependency_instructions[i], true);
 
         i++;
@@ -380,6 +402,32 @@ bool install_software(char *package_name, bool dependency) {
             break;
         }
     }
+
+    FILE *read_user_software_db  = fopen("/etc/cydramanager.d/usdb", "r");
+    FILE* write_user_software_db = fopen("/etc/cydramanager.d/temp", "w");
+    char read[512];
+    char pattern[128];
+    snprintf(pattern, sizeof(pattern), "%s ", package_name);
+
+    while (fgets(read, sizeof(read), read_user_software_db)) {
+        if (strstr(read, pattern)) {
+            continue;
+        }
+
+        fputs(read, write_user_software_db);
+    }
+
+    char new_line[512];
+    snprintf(new_line, sizeof(new_line), "%s %s\n", package_name, package_version);
+    fputs(new_line, write_user_software_db);
+
+    fclose(read_user_software_db);
+    fclose(write_user_software_db);
+
+    rename("/etc/cydramanager.d/usdb", "/etc/cydramanager.d/usdb_old");
+    rename("/etc/cydramanager.d/temp", "/etc/cydramanager.d/usdb");
+
+    printf("Installation for the package %s is done.\n", package_name);
 
     return true;
 }
