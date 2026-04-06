@@ -1,13 +1,24 @@
 #include "install_manager.h"
+#include "../arguments/debug/debug.h"
+#include "../utilities/utils.h"
 #include <curl/curl.h>
 #include <curl/easy.h>
+#include <dirent.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
-bool install_software(char *package_name) {
+static char build_instructions[MAXIMUM_LINES][MAXIMUM_LENGTH];
+static char install_instructions[MAXIMUM_LINES][MAXIMUM_LENGTH];
+static char dependency_instructions[256][MAXIMUM_LENGTH];
+static char download_link[10][MAXIMUM_LENGTH];
+
+typedef enum { BUILD, INSTALL, DEPENDENCY, DOWNLOAD, NONE } INSTRUCTION_MODE;
+
+bool install_software(char *package_name, bool dependency) {
     if (strlen(package_name) <= 0) {
         printf("Error: you need to provide a package name in order to install "
                "it.\n");
@@ -15,12 +26,13 @@ bool install_software(char *package_name) {
     }
 
     char *cache_dir = "/tmp/cydramanager.tmp";
-
-    system("rm -rf /tmp/cydramanager.tmp");
-    if (mkdir(cache_dir, 0777) == -1) {
-        printf(
-            "Error: could not create a temporary directory in /tmp folder.\n");
-        return false;
+    if (!dependency) {
+        system("rm -rf /tmp/cydramanager.tmp");
+        if (mkdir(cache_dir, 0777) == -1) {
+            printf("Error: could not create a temporary directory in /tmp "
+                   "folder.\n");
+            return false;
+        }
     }
 
     char *mirror_link = "https://raw.githubusercontent.com/acth2/"
@@ -43,7 +55,9 @@ bool install_software(char *package_name) {
                package_name);
         return false;
     }
-    printf("-> Getting the informations of the package %s from the current mirror.\n", package_name);
+    printf("-> Getting the informations of the dependency %s from the current "
+           "mirror.\n",
+           package_name);
 
     curl_easy_setopt(curl, CURLOPT_URL, package_link);
 
@@ -72,9 +86,14 @@ bool install_software(char *package_name) {
     package_version[strcspn(package_version, "\n")] = '\0';
 
     if (strcmp(package_version, "404: Not Found") == 0) {
-        printf("Error: The package you asked to install does not exist in the "
-               "current mirror.\n");
-        return false;
+        if (!dependency) {
+            printf(
+                "Error: The package you asked to install does not exist in the "
+                "current mirror.\n");
+            return false;
+        } else {
+            printf("Warning: The dependency %s is not found in the current mirror\n", package_name);
+        }
     }
 
     printf("## Package %s, version %s found.\n", package_name, package_version);
@@ -86,7 +105,9 @@ bool install_software(char *package_name) {
     strcat(instructions_link, package_name);
 
     if (!instructions_curl || !instructions_file) {
-        printf("Error: Unexpected behaviour during the installation of the software %s\n", package_name);
+        printf("Error: Unexpected behaviour during the installation of the "
+               "software %s\n",
+               package_name);
         return false;
     }
 
@@ -99,7 +120,8 @@ bool install_software(char *package_name) {
     curl_easy_cleanup(instructions_curl);
 
     if (cperf_instructions == CURLE_COULDNT_CONNECT) {
-        printf("Error: You are not connected to the internet, the installation cannot happen.\n");
+        printf("Error: You are not connected to the internet, the installation "
+               "cannot happen.\n");
         return false;
     }
 
@@ -108,6 +130,256 @@ bool install_software(char *package_name) {
         return false;
     }
     fclose(instructions_file);
+
+    char package_directory[512] = "";
+    snprintf(package_directory, sizeof(package_directory), "%s/%s_space",
+             "/tmp/cydramanager.tmp/", package_name);
+
+    if (mkdir(package_directory, 0777) == -1) {
+        printf("Error: Could not create the package directory in the tmp.\n");
+        return false;
+    }
+
+    FILE *instructions_reader = fopen(package_instructions_path, "r");
+    if (instructions_reader == NULL) {
+        printf("Error: cannot open the instructions file to build %s",
+               package_name);
+        return false;
+    }
+
+    char line[512];
+    char line_cleaned[512];
+    int step = 0;
+    INSTRUCTION_MODE mode = NONE;
+    while (fgets(line, sizeof(line), instructions_reader) != NULL) {
+        strcpy(line_cleaned, line);
+
+        if (strcmp(space_clean(line_cleaned), "build['") == 0) {
+            mode = BUILD;
+            continue;
+        }
+
+        if (strcmp(space_clean(line_cleaned), "install['") == 0) {
+            mode = INSTALL;
+            continue;
+        }
+
+        if (strcmp(space_clean(line_cleaned), "dependency['") == 0) {
+            mode = DEPENDENCY;
+            continue;
+        }
+
+        if (strcmp(space_clean(line_cleaned), "download['") == 0) {
+            mode = DOWNLOAD;
+            continue;
+        }
+
+        if (strcmp(space_clean(line_cleaned), "']") == 0 && mode != NONE) {
+            mode = NONE;
+            continue;
+        }
+
+        switch (mode) {
+        case BUILD: {
+            strcpy(build_instructions[step], line);
+            step++;
+            break;
+        }
+
+        case INSTALL: {
+            strcpy(install_instructions[step], line);
+            step++;
+            break;
+        }
+
+        case DEPENDENCY: {
+            strcpy(dependency_instructions[step], line);
+            step++;
+            break;
+        }
+
+        case DOWNLOAD: {
+            strcpy(download_link[step], line);
+            step++;
+            break;
+        }
+
+        case NONE:
+        default:
+            step = 0;
+            continue;
+        }
+    }
+
+    // download_link
+    int i = 0;
+    char archive_directory[512];
+    while (true) {
+        if (strlen(download_link[i]) <= 0) {
+            i = 0;
+            break;
+        }
+
+        char archive_name[250];
+        snprintf(
+            archive_name, sizeof(archive_name),
+            "/tmp/cydramanager.tmp/%s_space/package_archive_%d",
+            package_name, i);
+
+        download_link[i][strcspn(download_link[i], "\n")] = '\0';
+
+        CURL *curl = curl_easy_init();
+        FILE *file = fopen(archive_name, "wb");
+
+        if (!curl || !file) {
+            printf("Error: Unexpected behaviour during the installation of the "
+                   "package %s.\n",
+                   package_name);
+            break;
+        }
+        printf("Starting the update of the package %s\n", package_name);
+
+        curl_easy_setopt(curl, CURLOPT_URL, download_link[i]);
+
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
+
+        CURLcode cperf = curl_easy_perform(curl);
+        curl_easy_cleanup(curl);
+
+        if (cperf == CURLE_COULDNT_CONNECT) {
+            printf("Error: You are not connected to the internet, the update "
+                   "cannot happen.\n");
+            break;
+        }
+
+        if (cperf != CURLE_OK) {
+            printf("Error: an unexpected error occured.\n");
+            break;
+        }
+        fclose(file);
+        printf("Downloaded the archive for %s\n", package_name);
+
+        char extract_cmd[412];
+        snprintf(extract_cmd, sizeof(extract_cmd),
+                 "tar xf %s -C /tmp/cydramanager.tmp/%s_space",
+                 archive_name, package_name);
+        if (system(extract_cmd) != 0) {
+            printf("Error: Could not extract the sources archive for %s\n",
+                   package_name);
+            break;
+        }
+
+        char archive_space[256];
+        snprintf(archive_space, sizeof(archive_space),
+                 "/tmp/cydramanager.tmp/%s_space", package_name);
+
+        DIR *dir = opendir(archive_space);
+        struct dirent *entry;
+
+        while ((entry = readdir(dir)) != NULL) {
+            if (entry->d_name[0] == '.') {
+                continue;
+            }
+
+            snprintf(archive_directory, sizeof(archive_directory), "%s/%s",
+                     archive_space, entry->d_name);
+        }
+        closedir(dir);
+
+        chdir(archive_directory);
+
+        i++;
+        if (i >= 500) {
+            printf("Warning: Loop max use reached (500).\n");
+            break;
+        }
+    }
+
+    i = 0;
+
+    // dependency_instructions
+    while (true) {
+        if (strlen(dependency_instructions[i]) <= 0) {
+            break;
+        }
+
+        printf("-> Installing dependency %s for the package %s\n", dependency_instructions[i], package_name);
+        install_software(dependency_instructions[i], true);
+
+        i++;
+        if (i >= 500) {
+            printf("Warning: Loop max use reached (500).\n");
+            break;
+        }
+    }
+
+    // build_instructions
+    i = 0;
+    while (true) {
+        if (strlen(build_instructions[i]) <= 0) {
+            break;
+        }
+
+        replace_proc(build_instructions[i]);
+        build_instructions[i][strcspn(build_instructions[i], "\n")] = '\0';
+        if (!is_debug())
+            strcat(build_instructions[i], " > /dev/null 2>&1");
+
+        if (strstr(build_instructions[i], "cd ")) {
+            char *cd_directory;
+            char full_directory_path[1024];
+            cd_directory = strtok(build_instructions[i], " ");
+            cd_directory = strtok(NULL, " ");
+            snprintf(full_directory_path, sizeof(full_directory_path), "%s/%s",
+                     archive_directory, cd_directory);
+            chdir(full_directory_path);
+        }
+
+        if (system(build_instructions[i]) != 0 && is_debug()) {
+            printf("Error at build instructions numero %d for %s\n", i,
+                   package_name);
+            break;
+        }
+
+        if (is_debug())
+            printf("Success at executing %s at build step.\n",
+                   build_instructions[i]);
+
+        i++;
+        if (i >= 500) {
+            printf("Warning: Loop max use reached (500).\n");
+            break;
+        }
+    }
+
+    // install_instructions
+    i = 0;
+    while (true) {
+        if (strlen(install_instructions[i]) <= 0) {
+            break;
+        }
+
+        replace_proc(install_instructions[i]);
+        install_instructions[i][strcspn(install_instructions[i], "\n")] = '\0';
+        if (!is_debug())
+            strcat(install_instructions[i], " > /dev/null 2>&1");
+
+        if (system(install_instructions[i]) != 0 && is_debug()) {
+            printf("Error at install instructions numero %d for %s\n", i,
+                   package_name);
+            break;
+        }
+        if (is_debug())
+            printf("Success at executing %s at install step.\n",
+                   install_instructions[i]);
+
+        i++;
+        if (i >= 500) {
+            printf("Warning: Loop max use reached (500).\n");
+            break;
+        }
+    }
 
     return true;
 }

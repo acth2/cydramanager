@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
             case INSTALL: {
                 if(i + 1 < argc) {
                     char *package_name = argv[i + 1];
-                    install_software(package_name);
+                    install_software(package_name, false);
 
                     i++;
                 } else {

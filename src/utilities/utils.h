@@ -4,7 +4,7 @@
 #include <ctype.h>
 #include <string.h>
 
-char* space_clean(char* str) {
+static char* space_clean(char* str) {
     if (!str) return str;
     char *read = str, *write = str;
 
@@ -18,7 +18,7 @@ char* space_clean(char* str) {
     return str;
 }
 
-void replace_proc(char *str) {
+static void replace_proc(char *str) {
     char buffer[1024];
     char *pos;
     
