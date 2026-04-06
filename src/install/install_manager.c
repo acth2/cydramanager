@@ -1,5 +1,6 @@
 #include "install_manager.h"
 #include <curl/curl.h>
+#include <curl/easy.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,6 +31,7 @@ bool install_software(char *package_name) {
              package_name);
 
     char package_path[512] = "/tmp/cydramanager.tmp/";
+    char package_instructions_path[512] = "/tmp/cydramanager.tmp/instructions";
     strcat(package_path, package_name);
 
     CURL *curl = curl_easy_init();
@@ -41,6 +43,7 @@ bool install_software(char *package_name) {
                package_name);
         return false;
     }
+    printf("-> Getting the informations of the package %s from the current mirror.\n", package_name);
 
     curl_easy_setopt(curl, CURLOPT_URL, package_link);
 
@@ -51,7 +54,7 @@ bool install_software(char *package_name) {
     curl_easy_cleanup(curl);
 
     if (cperf == CURLE_COULDNT_CONNECT) {
-        printf("Error: You are not connected to the internet, the update "
+        printf("Error: You are not connected to the internet, the installation "
                "cannot happen.\n");
         return false;
     }
@@ -74,6 +77,37 @@ bool install_software(char *package_name) {
         return false;
     }
 
-    printf("Works: %s, version %s\n", package_name, package_version);
+    printf("## Package %s, version %s found.\n", package_name, package_version);
+    FILE *instructions_file = fopen(package_instructions_path, "wb");
+    CURL *instructions_curl = curl_easy_init();
+    char instructions_link[512] = "";
+    strcpy(instructions_link, mirror_link);
+    strcat(instructions_link, "instructions/");
+    strcat(instructions_link, package_name);
+
+    if (!instructions_curl || !instructions_file) {
+        printf("Error: Unexpected behaviour during the installation of the software %s\n", package_name);
+        return false;
+    }
+
+    curl_easy_setopt(instructions_curl, CURLOPT_URL, instructions_link);
+
+    curl_easy_setopt(instructions_curl, CURLOPT_FOLLOWLOCATION, 1L);
+    curl_easy_setopt(instructions_curl, CURLOPT_WRITEDATA, instructions_file);
+
+    CURLcode cperf_instructions = curl_easy_perform(instructions_curl);
+    curl_easy_cleanup(instructions_curl);
+
+    if (cperf_instructions == CURLE_COULDNT_CONNECT) {
+        printf("Error: You are not connected to the internet, the installation cannot happen.\n");
+        return false;
+    }
+
+    if (cperf_instructions != CURLE_OK) {
+        printf("Error: An unexpected error occured.\n");
+        return false;
+    }
+    fclose(instructions_file);
+
     return true;
 }

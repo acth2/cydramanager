@@ -79,6 +79,5 @@ int main(int argc, char *argv[]) {
         return 0;
     }
     printf("Use --help to see available options.\n");
-
     return 0;
 }
