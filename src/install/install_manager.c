@@ -1,6 +1,7 @@
 #include "install_manager.h"
 #include "../arguments/debug/debug.h"
 #include "../utilities/utils.h"
+#include "src/main.h"
 #include <curl/curl.h>
 #include <curl/easy.h>
 #include <dirent.h>
@@ -111,10 +112,14 @@ bool install_software(char *package_name, bool dependency) {
 
             current_scope[strcspn(current_scope, "\n")] = '\0';
             if (strcmp(current_scope, package_version) == 0) {
-                printf("The package %s is already installed and updated on your system.\n", package_name);
+                printf("Error: The package %s is already installed and updated "
+                       "on your system.\n",
+                       package_name);
                 return true;
             }
-            printf("The package %s is already installed but not updated. It will be updated.\n", package_name);
+            printf("The package %s is already installed but not updated. It "
+                   "will be updated.\n",
+                   package_name);
         }
     }
     fclose(user_software_database);
@@ -403,13 +408,20 @@ bool install_software(char *package_name, bool dependency) {
         }
     }
 
-    FILE *read_user_software_db  = fopen("/etc/cydramanager.d/usdb", "r");
-    FILE* write_user_software_db = fopen("/etc/cydramanager.d/temp", "w");
+    FILE *read_user_software_db = fopen("/etc/cydramanager.d/usdb", "r");
+    FILE *write_user_software_db = fopen("/etc/cydramanager.d/temp", "w");
     char read[512];
+    char read_buffer[512];
     char pattern[128];
     snprintf(pattern, sizeof(pattern), "%s ", package_name);
 
     while (fgets(read, sizeof(read), read_user_software_db)) {
+        strcpy(read_buffer, read);
+
+        if (strlen(space_clean(read_buffer)) <= 0) {
+            continue;
+        }
+
         if (strstr(read, pattern)) {
             continue;
         }
@@ -418,7 +430,8 @@ bool install_software(char *package_name, bool dependency) {
     }
 
     char new_line[512];
-    snprintf(new_line, sizeof(new_line), "%s %s\n", package_name, package_version);
+    snprintf(new_line, sizeof(new_line), "%s %s\n", package_name,
+             package_version);
     fputs(new_line, write_user_software_db);
 
     fclose(read_user_software_db);

@@ -2,11 +2,13 @@
 #include "arguments/arg.h"
 #include "arguments/debug/debug.h"
 #include "install/install_manager.h"
+#include "src/remove/remove_manager.h"
 #include "update/update_manager.h"
 #include <curl/curl.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 
 int main(int argc, char *argv[]) {
     curl_global_init(CURL_GLOBAL_SSL);
@@ -62,6 +64,14 @@ int main(int argc, char *argv[]) {
             }
 
             case UNINSTALL: {
+                if (i + 1 < argc) {
+                    char *package_name = argv[i + 1];
+                    remove_software(package_name);
+
+                    i++;
+                } else {
+                    printf("Error: you need to provide a package name in order to remove it.\n");
+                }
                 break;
             }
 
@@ -80,4 +90,19 @@ int main(int argc, char *argv[]) {
     }
     printf("Use --help to see available options.\n");
     return 0;
+}
+
+void print_help() {
+    printf("cydramanager - cydra package manager\n");
+    printf("\nUsage:\n");
+    printf("  cydramanager [command] [arguments]\n");
+    printf("\nCommands:\n");
+    printf("  help       Show this help message\n");
+    printf("  update     Update the system\n");
+    printf("  install    Install a package in the system\n");
+    printf("  version    Show cydramanager version\n");
+};
+
+void print_version() { 
+    printf("cydramanager version 0.1.0\n");
 }

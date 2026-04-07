@@ -1,4 +1,0 @@
-#ifndef UNINSTALL_MANAGER_H
-#define UNINSTALL_MANAGER_H
-
-#endif

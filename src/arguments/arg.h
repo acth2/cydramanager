@@ -8,7 +8,7 @@ static const char *help_args[] =      { "--help",      "-help",      "help",    
 static const char *update_args[] =    { "--update",    "-update",    "update",    "-u" };
 static const char *version_args[] =   { "--version",   "-version",   "version",   "-v" };
 static const char *install_args[] =   { "--install",   "-install",   "install",   "-i" };
-static const char *uninstall_args[] = { "--uninstall", "-uninstall", "uninstall", "-u" };
+static const char *uninstall_args[] = { "--remove",    "-remvoe",    "remove",    "-r" };
 static const char *debug_args[] =     { "--debug",     "-debug",                  "-d" };
 
 enum ARG {
