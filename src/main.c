@@ -100,6 +100,7 @@ void print_help() {
     printf("  help       Show this help message\n");
     printf("  update     Update the system\n");
     printf("  install    Install a package in the system\n");
+    printf("  remove     Remove a package in the system\n");
     printf("  version    Show cydramanager version\n");
 };
 

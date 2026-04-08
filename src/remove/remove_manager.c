@@ -1,5 +1,6 @@
 #include "remove_manager.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "../utilities/utils.h"
 
@@ -22,6 +23,39 @@ bool remove_software(char *package_name) {
         return false;
     }
     fclose(check_installed_software);
+    printf("-> Preparing the removal of %s\n", package_name);
 
+    char removal_command[512];
+    snprintf(removal_command, sizeof(removal_command), "rm -r /usr/bin/cydramanager/%s", package_name);
+    if (system(removal_command) != 0) {
+        printf("Error: could not delete the installation directory of %s\n", package_name);
+        return false;
+    }
+    printf("-> Package %s removed.\n", package_name);
+    printf("-> Cleaning symbolics links\n");
+
+    if (system("find /usr/bin/cydramanager-binaries -xtype l -delete") != 0) {
+        printf("Error: could not clean the symbolic links\n");
+        return false;
+    }
+
+    printf("-> Symbolics links removed for the package %s", package_name);
+    printf("-> Removing package from the database\n");
+
+    FILE *db_read  = fopen("/etc/cydramanager.d/usdb", "r");
+    FILE *db_write = fopen("/etc/cydramanager.d/usdb", "w");
+
+    char db_buffer[512];
+    while (fgets(db_buffer, sizeof(db_buffer), db_read)) {
+        if (strstr(db_buffer, package_name)) {
+            continue;
+        }
+
+        fputs(db_buffer, db_write);
+    }
+    fclose(db_read);
+    fclose(db_write);
+
+    printf("## The package %s has been removed from the system.\n", package_name);
     return true;
 }
