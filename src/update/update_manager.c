@@ -553,7 +553,6 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
 
     while(fgets(current_line, sizeof(current_line), user_db_reader)) {
         if (strstr(current_line, line2remove) != 0) {
-            printf("MY LIFE MY RULE MY JSP MY ATTIDUDE\n");
             continue;
         }
 
