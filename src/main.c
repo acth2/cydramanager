@@ -8,10 +8,15 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 int main(int argc, char *argv[]) {
-    curl_global_init(CURL_GLOBAL_SSL);
+    if (geteuid() != 0) {
+        printf("Error: cydramanager needs to be run with elevated privileges.\n");
+        return 1;
+    }
 
+    curl_global_init(CURL_GLOBAL_SSL);
     if (argc > 1) {
         for (int i = 1; i < argc; i++) {
             if (arg2enum(argv[i]) == ARG_DEBUG) {
@@ -77,7 +82,7 @@ int main(int argc, char *argv[]) {
             }
 
             case UNK: {
-                printf("unknown argument %s, use --help to see available "
+                printf("unknown command %s, use --help to see available "
                        "options.\n",
                        argv[i]);
                 break;
@@ -96,13 +101,15 @@ int main(int argc, char *argv[]) {
 void print_help() {
     printf("cydramanager - cydra package manager\n");
     printf("\nUsage:\n");
-    printf("  cydramanager [command] [arguments]\n");
+    printf("   cydramanager [command] [arguments]\n");
     printf("\nCommands:\n");
-    printf("  help       Show this help message\n");
-    printf("  update     Update the system\n");
-    printf("  install    Install a package in the system\n");
-    printf("  remove     Remove a package in the system\n");
-    printf("  version    Show cydramanager version\n");
+    printf("   help       Show this help message\n");
+    printf("   update     Update the system\n");
+    printf("   install    Install a package in the system\n");
+    printf("   remove     Remove a package in the system\n");
+    printf("   version    Show cydramanager version\n");
+    printf("\nArguments:\n");
+    printf("   -debug     Show detailed build steps and logs\n");
 };
 
-void print_version() { printf("cydramanager version 0.1.0\n"); }
+void print_version() { printf("cydramanager 0.1.0\n"); }
