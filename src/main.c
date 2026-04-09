@@ -4,6 +4,7 @@
 #include "install/install_manager.h"
 #include "src/remove/remove_manager.h"
 #include "update/update_manager.h"
+#include "utilities/utils.h"
 #include <curl/curl.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -12,7 +13,8 @@
 
 int main(int argc, char *argv[]) {
     if (geteuid() != 0) {
-        printf("Error: cydramanager needs to be run with elevated privileges.\n");
+        printf(RED "Error: cydramanager needs to be run with elevated "
+                   "privileges.\n" RESET);
         return 1;
     }
 
@@ -40,8 +42,8 @@ int main(int argc, char *argv[]) {
                 SoftwareDB db = get_current_database("/etc/cydramanager.d/sdb");
                 UpdatedDB udb = get_updated_database(db);
                 if (!apply_software_db(db)) {
-                    printf(
-                        "Error: The database could not have been updated.\n");
+                    printf(RED "Error: The database could not have been "
+                               "updated.\n" RESET);
                     break;
                 }
 
@@ -62,8 +64,9 @@ int main(int argc, char *argv[]) {
 
                     i++;
                 } else {
-                    printf("Error: you need to provide a package name in order "
-                           "to install it.\n");
+                    printf(RED
+                           "Error: you need to provide a package name in order "
+                           "to install it.\n" RESET);
                 }
                 break;
             }
@@ -75,8 +78,9 @@ int main(int argc, char *argv[]) {
 
                     i++;
                 } else {
-                    printf("Error: you need to provide a package name in order "
-                           "to remove it.\n");
+                    printf(RED
+                           "Error: you need to provide a package name in order "
+                           "to remove it.\n" RESET);
                 }
                 break;
             }
@@ -99,17 +103,17 @@ int main(int argc, char *argv[]) {
 }
 
 void print_help() {
-    printf("cydramanager - cydra package manager\n");
-    printf("\nUsage:\n");
-    printf("   cydramanager [command] [arguments]\n");
-    printf("\nCommands:\n");
-    printf("   help       Show this help message\n");
-    printf("   update     Update the system\n");
-    printf("   install    Install a package in the system\n");
-    printf("   remove     Remove a package in the system\n");
-    printf("   version    Show cydramanager version\n");
-    printf("\nArguments:\n");
-    printf("   -debug     Show detailed build steps and logs\n");
+    printf(RESET "cydramanager - cydra package manager\n");
+    printf(RESET "\nUsage:\n");
+    printf(RESET "   cydramanager" YELLOW " [command] " RESET "[arguments]\n");
+    printf(RESET "\nCommands:\n");
+    printf(YELLOW "   help       " RESET "Show this help message\n");
+    printf(YELLOW "   update     " RESET "Update the system\n");
+    printf(YELLOW "   install    " RESET "Install a package in the system\n");
+    printf(YELLOW "   remove     " RESET "Remove a package in the system\n");
+    printf(YELLOW "   version    " RESET "Show cydramanager version\n");
+    printf(RESET "\nArguments:\n");
+    printf(YELLOW "   -debug     " RESET "Show detailed build steps and logs\n");
 };
 
-void print_version() { printf("cydramanager 0.1.0\n"); }
+void print_version() { printf(RESET "cydramanager" YELLOW " 0.1.0\n"); }

@@ -1,2 +1,7 @@
 CydraOS Package manager.
-A database file is needed to track the installed packages with their versions. I hard written the one in CydraOS / CydraLite
+The package manager needs a mirror in which tracks the updated packages with build instructions and have install
+
+TODO:
+ - Make the package manage stable.
+ - Be able to use multiple mirrors at the same time
+ - Make the package manager compile multiple packages at the same time (mt)

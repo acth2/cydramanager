@@ -1,7 +1,6 @@
 #include "install_manager.h"
 #include "../arguments/debug/debug.h"
 #include "../utilities/utils.h"
-#include "src/main.h"
 #include <curl/curl.h>
 #include <curl/easy.h>
 #include <dirent.h>
@@ -21,8 +20,9 @@ typedef enum { BUILD, INSTALL, DEPENDENCY, DOWNLOAD, NONE } INSTRUCTION_MODE;
 
 bool install_software(char *package_name, bool dependency) {
     if (strlen(package_name) <= 0) {
-        printf("Error: you need to provide a package name in order to install "
-               "it.\n");
+        printf(RED
+               "Error: you need to provide a package name in order to install "
+               "it.\n" RESET);
         return false;
     }
 
@@ -30,8 +30,8 @@ bool install_software(char *package_name, bool dependency) {
     if (!dependency) {
         system("rm -rf /tmp/cydramanager.tmp");
         if (mkdir(cache_dir, 0777) == -1) {
-            printf("Error: could not create a temporary directory in /tmp "
-                   "folder.\n");
+            printf(RED "Error: could not create a temporary directory in /tmp "
+                       "folder.\n" RESET);
             return false;
         }
     }
@@ -51,13 +51,14 @@ bool install_software(char *package_name, bool dependency) {
     FILE *file = fopen(package_path, "wb");
 
     if (!curl || !file) {
-        printf("Error: Unexpected behaviour during the installation of the "
-               "software %s\n",
+        printf(RED "Error: Unexpected behaviour during the installation of the "
+                   "software %s\n" RESET,
                package_name);
         return false;
     }
-    printf("-> Getting the informations of the package %s from the current "
-           "mirror.\n",
+    printf(GRAY
+           "-> Getting the informations of the package %s from the current "
+           "mirror.\n" RESET,
            package_name);
 
     curl_easy_setopt(curl, CURLOPT_URL, package_link);
@@ -69,13 +70,14 @@ bool install_software(char *package_name, bool dependency) {
     curl_easy_cleanup(curl);
 
     if (cperf == CURLE_COULDNT_CONNECT) {
-        printf("Error: You are not connected to the internet, the installation "
-               "cannot happen.\n");
+        printf(RED
+               "Error: You are not connected to the internet, the installation "
+               "cannot happen.\n" RESET);
         return false;
     }
 
     if (cperf != CURLE_OK) {
-        printf("Error: an unexpected error occured.\n");
+        printf(RED "Error: an unexpected error occured.\n" RESET);
         return false;
     }
     fclose(file);
@@ -89,8 +91,9 @@ bool install_software(char *package_name, bool dependency) {
     if (strcmp(package_version, "404: Not Found") == 0) {
         if (!dependency) {
             printf(
+                RED
                 "Error: The package you asked to install does not exist in the "
-                "current mirror.\n");
+                "current mirror.\n" RESET);
             return false;
         } else {
             printf("Warning: The dependency %s is not found in the current "
@@ -99,7 +102,8 @@ bool install_software(char *package_name, bool dependency) {
         }
     }
 
-    printf("## Package %s, version %s found.\n", package_name, package_version);
+    printf(YELLOW "## Package %s, version %s found.\n" RESET, package_name,
+           package_version);
 
     FILE *user_software_database = fopen("/etc/cydramanager.d/usdb", "r");
     char buffer[512];
@@ -112,12 +116,14 @@ bool install_software(char *package_name, bool dependency) {
 
             current_scope[strcspn(current_scope, "\n")] = '\0';
             if (strcmp(current_scope, package_version) == 0) {
-                printf("Error: The package %s is already installed and updated "
-                       "on your system.\n",
+                printf(RED
+                       "Error: The package %s is already installed and updated "
+                       "on your system.\n" RESET,
                        package_name);
                 return true;
             }
-            printf("The package %s is already installed but not updated. It "
+            printf(RESET
+                   "The package %s is already installed but not updated. It "
                    "will be updated.\n",
                    package_name);
         }
@@ -132,8 +138,8 @@ bool install_software(char *package_name, bool dependency) {
     strcat(instructions_link, package_name);
 
     if (!instructions_curl || !instructions_file) {
-        printf("Error: Unexpected behaviour during the installation of the "
-               "software %s\n",
+        printf(RED "Error: Unexpected behaviour during the installation of the "
+                   "software %s\n" RESET,
                package_name);
         return false;
     }
@@ -147,13 +153,14 @@ bool install_software(char *package_name, bool dependency) {
     curl_easy_cleanup(instructions_curl);
 
     if (cperf_instructions == CURLE_COULDNT_CONNECT) {
-        printf("Error: You are not connected to the internet, the installation "
-               "cannot happen.\n");
+        printf(RED
+               "Error: You are not connected to the internet, the installation "
+               "cannot happen.\n" RESET);
         return false;
     }
 
     if (cperf_instructions != CURLE_OK) {
-        printf("Error: An unexpected error occured.\n");
+        printf(RED "Error: An unexpected error occured.\n" RESET);
         return false;
     }
     fclose(instructions_file);
@@ -163,13 +170,14 @@ bool install_software(char *package_name, bool dependency) {
              "/tmp/cydramanager.tmp/", package_name);
 
     if (mkdir(package_directory, 0777) == -1) {
-        printf("Error: Could not create the package directory in the tmp.\n");
+        printf(RED "Error: Could not create the package directory in the "
+                   "tmp.\n" RESET);
         return false;
     }
 
     FILE *instructions_reader = fopen(package_instructions_path, "r");
     if (instructions_reader == NULL) {
-        printf("Error: cannot open the instructions file to build %s",
+        printf(RED "Error: cannot open the instructions file to build %s" RESET,
                package_name);
         return false;
     }
@@ -258,8 +266,9 @@ bool install_software(char *package_name, bool dependency) {
         FILE *file = fopen(archive_name, "wb");
 
         if (!curl || !file) {
-            printf("Error: Unexpected behaviour during the installation of the "
-                   "package %s.\n",
+            printf(RED
+                   "Error: Unexpected behaviour during the installation of the "
+                   "package %s.\n" RESET,
                    package_name);
             break;
         }
@@ -274,13 +283,14 @@ bool install_software(char *package_name, bool dependency) {
         curl_easy_cleanup(curl);
 
         if (cperf == CURLE_COULDNT_CONNECT) {
-            printf("Error: You are not connected to the internet, the update "
-                   "cannot happen.\n");
+            printf(RED
+                   "Error: You are not connected to the internet, the update "
+                   "cannot happen.\n" RESET);
             break;
         }
 
         if (cperf != CURLE_OK) {
-            printf("Error: an unexpected error occured.\n");
+            printf(RED "Error: an unexpected error occured.\n" RESET);
             break;
         }
         fclose(file);
@@ -291,8 +301,10 @@ bool install_software(char *package_name, bool dependency) {
                  "tar xf %s -C /tmp/cydramanager.tmp/%s_space", archive_name,
                  package_name);
         if (system(extract_cmd) != 0) {
-            printf("Error: Could not extract the sources archive for %s\n",
-                   package_name);
+            printf(
+                RED
+                "Error: Could not extract the sources archive for %s\n" RESET,
+                package_name);
             break;
         }
 
@@ -330,7 +342,7 @@ bool install_software(char *package_name, bool dependency) {
             break;
         }
 
-        printf("-> Installing dependency %s for the package %s\n",
+        printf(GRAY "-> Installing dependency %s for the package %s\n" RESET,
                dependency_instructions[i], package_name);
         install_software(dependency_instructions[i], true);
 
@@ -364,8 +376,8 @@ bool install_software(char *package_name, bool dependency) {
         }
 
         if (system(build_instructions[i]) != 0 && is_debug()) {
-            printf("Error at build instructions numero %d for %s\n", i,
-                   package_name);
+            printf(RED "Error at build instructions numero %d for %s\n" RESET,
+                   i, package_name);
             break;
         }
 
