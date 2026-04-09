@@ -9,7 +9,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
 int main(int argc, char *argv[]) {
     curl_global_init(CURL_GLOBAL_SSL);
 
@@ -52,13 +51,14 @@ int main(int argc, char *argv[]) {
             }
 
             case INSTALL: {
-                if(i + 1 < argc) {
+                if (i + 1 < argc) {
                     char *package_name = argv[i + 1];
                     install_software(package_name, false);
 
                     i++;
                 } else {
-                    printf("Error: you need to provide a package name in order to install it.\n");
+                    printf("Error: you need to provide a package name in order "
+                           "to install it.\n");
                 }
                 break;
             }
@@ -70,7 +70,8 @@ int main(int argc, char *argv[]) {
 
                     i++;
                 } else {
-                    printf("Error: you need to provide a package name in order to remove it.\n");
+                    printf("Error: you need to provide a package name in order "
+                           "to remove it.\n");
                 }
                 break;
             }
@@ -104,6 +105,4 @@ void print_help() {
     printf("  version    Show cydramanager version\n");
 };
 
-void print_version() { 
-    printf("cydramanager version 0.1.0\n");
-}
+void print_version() { printf("cydramanager version 0.1.0\n"); }

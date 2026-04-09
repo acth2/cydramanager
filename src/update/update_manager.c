@@ -457,6 +457,8 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
         }
     }
 
+    printf("Building and installing the package %s\n", update_database.updated_db.software_map[index].software_name);
+
     // build_instructions
     i = 0;
     while (true) {
@@ -524,6 +526,51 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
             printf("Warning: Loop max use reached (500).\n");
             break;
         }
+    }
+    char version_path[256];
+    snprintf(version_path, sizeof(version_path), "%s%s", "/tmp/cydramanager.tmp/", update_database.updated_db.software_map[index].software_name);
+
+    FILE *user_db_reader = fopen("/etc/cydramanager.d/sdb", "r");
+    FILE *user_db_writer = fopen("/etc/cydramanager.d/sdb_temp", "w");
+
+    FILE *software_version_file = fopen(version_path, "r");
+    char updated_version[256];
+
+    char current_line[512];
+
+    char line2remove[512];
+    snprintf(line2remove, sizeof(line2remove), "%s ", update_database.updated_db.software_map[index].software_name);
+
+    char buffer_updated_version[256];
+    while (fgets(buffer_updated_version, sizeof(buffer_updated_version), software_version_file)) {
+        if (strlen(buffer_updated_version) <= 0) {
+            continue;
+        }
+        buffer_updated_version[strcspn(buffer_updated_version, "\n")] = '\0';
+
+        strcpy(updated_version, buffer_updated_version);
+    }
+
+    while(fgets(current_line, sizeof(current_line), user_db_reader)) {
+        if (strstr(current_line, line2remove) != 0) {
+            printf("MY LIFE MY RULE MY JSP MY ATTIDUDE\n");
+            continue;
+        }
+
+        fputs(current_line, user_db_writer);
+    }
+   
+    char line2replace[1024];
+    snprintf(line2replace, sizeof(line2replace), "%s %s\n", update_database.updated_db.software_map[index].software_name, updated_version);
+
+    fputs(line2replace, user_db_writer);
+
+    fclose(user_db_reader);
+    fclose(user_db_writer);
+
+    if(rename("/etc/cydramanager.d/sdb_temp", "/etc/cydramanager.d/sdb") != 0) {
+        printf("Error: could not update the software database for the package %s\n", update_database.updated_db.software_map[index].software_name);
+        return;
     }
 
     printf("Software %s updated.\n",

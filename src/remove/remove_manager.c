@@ -44,10 +44,13 @@ bool remove_software(char *package_name) {
 
     FILE *db_read  = fopen("/etc/cydramanager.d/usdb", "r");
     FILE *db_write = fopen("/etc/cydramanager.d/usdb", "w");
+    
+    char search[512];
+    snprintf(search, sizeof(search), "%s ", package_name);
 
     char db_buffer[512];
     while (fgets(db_buffer, sizeof(db_buffer), db_read)) {
-        if (strstr(db_buffer, package_name)) {
+        if (strstr(db_buffer, search)) {
             continue;
         }
 
