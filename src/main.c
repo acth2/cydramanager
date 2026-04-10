@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include "configuration/configuration.h"
 
 int main(int argc, char *argv[]) {
     if (geteuid() != 0) {
@@ -24,6 +25,17 @@ int main(int argc, char *argv[]) {
         for (int i = 1; i < argc; i++) {
             if (arg2enum(argv[i]) == ARG_DEBUG) {
                 set_debug(true);
+            }
+
+            if (arg2enum(argv[i]) == ARG_CONF) {
+                if (i + 1 < argc) {
+                    change_configuration(argv[i + 1]);
+                    check_crash();
+
+                    i++;
+                } else {
+                    printf(RED "Error: the argument %s need to provide a path.\n" RESET, argv[i]);
+                }
             }
         }
 
@@ -121,10 +133,11 @@ void print_help() {
     printf(YELLOW "   remove     " RESET "Remove a package in the system\n");
     printf(YELLOW "   version    " RESET "Show cydramanager version\n");
     printf(RESET "\nArguments:\n");
-    printf(YELLOW "   -debug     " RESET "Show detailed build steps and logs\n");
+    printf(YELLOW "   -debug     " RESET "Show detailed informations\n");
+    printf(YELLOW "   -conf      " RESET "Set an explicit configuration file\n");
 };
 
-void print_version() { printf(RESET "cydramanager" YELLOW " 0.1.0\n"); }
+void print_version() { printf(RESET "cydramanager" YELLOW " 0.1.0\n" RESET); }
 
 void check_crash() {
     if (did_crash()) {
