@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 void print_help();
-void print_version(); 
+void print_version();
+void check_crash();
 
 #endif

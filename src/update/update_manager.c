@@ -1,6 +1,8 @@
 #include "update_manager.h"
+#include "../exit/exit.h"
 #include "../arguments/debug/debug.h"
 #include "../utilities/utils.h"
+#include "src/main.h"
 #include <curl/curl.h>
 #include <dirent.h>
 #include <stdbool.h>
@@ -22,6 +24,8 @@ SoftwareDB get_current_database(char *dbPath) {
     if (fptr == NULL) {
         printf(RED "Error: The software database cannot be opened by the "
                    "software.\n" RESET);
+
+        set_exit(1);
         return db;
     }
 
@@ -70,6 +74,8 @@ SoftwareDB get_current_database(char *dbPath) {
 }
 
 UpdatedDB get_updated_database(SoftwareDB old_instance) {
+    check_crash();
+
     UpdatedDB updated_instance = {0};
     updated_instance.updated_db.software_map =
         malloc(*(old_instance.software_counter) * sizeof(SoftwareMap));
@@ -80,6 +86,8 @@ UpdatedDB get_updated_database(SoftwareDB old_instance) {
     if (mkdir(cache_dir, 0777) == -1) {
         printf(RED "Error: could not create a temporary directory in /tmp "
                    "folder.\n" RESET);
+
+        set_exit(1);
         return updated_instance;
     }
 
@@ -89,6 +97,8 @@ UpdatedDB get_updated_database(SoftwareDB old_instance) {
     if (!curl || !file) {
         printf(RED "Error: Unexpected behaviour during the update of the "
                    "databases.\n" RESET);
+
+        set_exit(1);
         return updated_instance;
     }
 
@@ -105,11 +115,15 @@ UpdatedDB get_updated_database(SoftwareDB old_instance) {
     if (cperf == CURLE_COULDNT_CONNECT) {
         printf(RED "Error: You are not connected to the internet, the update "
                    "cannot happen.\n" RESET);
+
+        set_exit(1);
         return updated_instance;
     }
 
     if (cperf != CURLE_OK) {
         printf(RED "Error: an unexpected error occured.\n" RESET);
+
+        set_exit(1);
         return updated_instance;
     }
     fclose(file);
@@ -117,6 +131,8 @@ UpdatedDB get_updated_database(SoftwareDB old_instance) {
     if (system("tar -xzf /tmp/cydramanager.tmp/versions.tar.gz -C "
                "/tmp/cydramanager.tmp") != 0) {
         printf(RED "Error: Could not extract the database.\n" RESET);
+
+        set_exit(1);
         return updated_instance;
     }
     printf(GRAY "-> Downloaded and extracted database.\n" RESET);
@@ -168,6 +184,8 @@ bool apply_software_db(SoftwareDB db) {
 
     if (rename("/etc/cydramanager.d/sdb", old_db_path_fused) != 0) {
         printf(RED "Error: could not rename the old database.\n" RESET);
+
+        set_exit(1);
         return false;
     }
 
@@ -175,6 +193,8 @@ bool apply_software_db(SoftwareDB db) {
     fptr = fopen("/etc/cydramanager.d/sdb", "w");
     if (fptr == NULL) {
         printf(RED "Error: could not create new database.\n" RESET);
+
+        set_exit(1);
         return false;
     }
 
@@ -203,6 +223,8 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
             printf(
                 RED
                 "Error: could not create the instructions database.\n" RESET);
+
+            set_exit(1);
             return;
         }
 
@@ -213,6 +235,8 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
         if (!curl || !file) {
             printf(RED "Error: Unexpected behaviour during the update of the "
                        "instructions databases.\n" RESET);
+
+            set_exit(1);
             return;
         }
 
@@ -230,11 +254,15 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
             printf(RED
                    "Error: You are not connected to the internet, the update "
                    "cannot happen.\n" RESET);
+
+            set_exit(1);
             return;
         }
 
         if (cperf != CURLE_OK) {
             printf(RED "Error: an unexpected error occured.\n" RESET);
+
+            set_exit(1);
             return;
         }
         fclose(file);
@@ -245,6 +273,8 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
             printf(
                 RED
                 "Error: Could not extract the instructions database.\n" RESET);
+
+            set_exit(1);
             return;
         }
         printf(
@@ -261,6 +291,8 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
     if (fptr == NULL) {
         printf(RED "Error: cannot open the instructions file to build %s" RESET,
                update_database.updated_db.software_map[index].software_name);
+
+        set_exit(1);
         return;
     }
 
@@ -273,6 +305,8 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
         printf(RED "Error: Failed to create the package build directory for "
                    "%s\n" RESET,
                update_database.updated_db.software_map[index].software_name);
+
+        set_exit(1);
         return;
     }
 
@@ -366,6 +400,8 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
             printf(RED "Error: Unexpected behaviour during the update of the "
                        "package %s.\n" RESET,
                    software_name);
+
+            set_exit(1);
             break;
         }
         printf(RESET "Starting the update of the package %s\n", software_name);
@@ -382,11 +418,15 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
             printf(RED
                    "Error: You are not connected to the internet, the update "
                    "cannot happen.\n" RESET);
+
+            set_exit(1);
             break;
         }
 
         if (cperf != CURLE_OK) {
             printf(RED "Error: an unexpected error occured.\n" RESET);
+
+            set_exit(1);
             break;
         }
         fclose(file);
@@ -397,8 +437,12 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
                  "tar xf %s -C /tmp/cydramanager.tmp/instructions/%s_space",
                  archive_name, software_name);
         if (system(extract_cmd) != 0) {
-            printf("Error: Could not extract the sources archive for %s\n",
-                   software_name);
+            printf(
+                RED
+                "Error: Could not extract the sources archive for %s\n" RESET,
+                software_name);
+
+            set_exit(1);
             break;
         }
 
@@ -496,6 +540,8 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
             printf(
                 RED "Error at build instructions numero %d for %s\n" RESET, i,
                 update_database.updated_db.software_map[index].software_name);
+
+            set_exit(1);
             break;
         }
 
@@ -526,6 +572,8 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
             printf(
                 RED "Error at install instructions numero %d for %s\n" RESET, i,
                 update_database.updated_db.software_map[index].software_name);
+
+            set_exit(1);
             break;
         }
         if (is_debug())
@@ -589,6 +637,8 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
         printf(RED "Error: could not update the software database for the "
                    "package %s\n" RESET,
                update_database.updated_db.software_map[index].software_name);
+
+        set_exit(1);
         return;
     }
 

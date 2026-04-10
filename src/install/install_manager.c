@@ -1,6 +1,7 @@
 #include "install_manager.h"
 #include "../arguments/debug/debug.h"
 #include "../utilities/utils.h"
+#include "src/exit/exit.h"
 #include <curl/curl.h>
 #include <curl/easy.h>
 #include <dirent.h>
@@ -23,6 +24,8 @@ bool install_software(char *package_name, bool dependency) {
         printf(RED
                "Error: you need to provide a package name in order to install "
                "it.\n" RESET);
+
+        set_exit(1);
         return false;
     }
 
@@ -32,6 +35,8 @@ bool install_software(char *package_name, bool dependency) {
         if (mkdir(cache_dir, 0777) == -1) {
             printf(RED "Error: could not create a temporary directory in /tmp "
                        "folder.\n" RESET);
+
+            set_exit(1);
             return false;
         }
     }
@@ -54,6 +59,8 @@ bool install_software(char *package_name, bool dependency) {
         printf(RED "Error: Unexpected behaviour during the installation of the "
                    "software %s\n" RESET,
                package_name);
+
+        set_exit(1);
         return false;
     }
     printf(GRAY
@@ -73,11 +80,15 @@ bool install_software(char *package_name, bool dependency) {
         printf(RED
                "Error: You are not connected to the internet, the installation "
                "cannot happen.\n" RESET);
+
+        set_exit(1);
         return false;
     }
 
     if (cperf != CURLE_OK) {
         printf(RED "Error: an unexpected error occured.\n" RESET);
+
+        set_exit(1);
         return false;
     }
     fclose(file);
@@ -94,6 +105,8 @@ bool install_software(char *package_name, bool dependency) {
                 RED
                 "Error: The package you asked to install does not exist in the "
                 "current mirror.\n" RESET);
+
+            set_exit(1);
             return false;
         } else {
             printf("Warning: The dependency %s is not found in the current "
@@ -106,6 +119,14 @@ bool install_software(char *package_name, bool dependency) {
            package_version);
 
     FILE *user_software_database = fopen("/etc/cydramanager.d/usdb", "r");
+
+    if (!user_software_database) {
+        printf(RED "Error: cannot open the user software database file, does it exist?\n" RESET);
+
+        set_exit(1);
+        return false;
+    }
+
     char buffer[512];
     char *current_scope;
 
@@ -120,6 +141,8 @@ bool install_software(char *package_name, bool dependency) {
                        "Error: The package %s is already installed and updated "
                        "on your system.\n" RESET,
                        package_name);
+
+                set_exit(1);
                 return true;
             }
             printf(RESET
@@ -141,6 +164,8 @@ bool install_software(char *package_name, bool dependency) {
         printf(RED "Error: Unexpected behaviour during the installation of the "
                    "software %s\n" RESET,
                package_name);
+
+        set_exit(1);
         return false;
     }
 
@@ -156,11 +181,15 @@ bool install_software(char *package_name, bool dependency) {
         printf(RED
                "Error: You are not connected to the internet, the installation "
                "cannot happen.\n" RESET);
+
+        set_exit(1);
         return false;
     }
 
     if (cperf_instructions != CURLE_OK) {
         printf(RED "Error: An unexpected error occured.\n" RESET);
+
+        set_exit(1);
         return false;
     }
     fclose(instructions_file);
@@ -172,6 +201,8 @@ bool install_software(char *package_name, bool dependency) {
     if (mkdir(package_directory, 0777) == -1) {
         printf(RED "Error: Could not create the package directory in the "
                    "tmp.\n" RESET);
+
+        set_exit(1);
         return false;
     }
 
@@ -179,6 +210,8 @@ bool install_software(char *package_name, bool dependency) {
     if (instructions_reader == NULL) {
         printf(RED "Error: cannot open the instructions file to build %s" RESET,
                package_name);
+
+        set_exit(1);
         return false;
     }
 
@@ -270,6 +303,8 @@ bool install_software(char *package_name, bool dependency) {
                    "Error: Unexpected behaviour during the installation of the "
                    "package %s.\n" RESET,
                    package_name);
+
+            set_exit(1);
             break;
         }
         printf("Starting the update of the package %s\n", package_name);
@@ -286,11 +321,15 @@ bool install_software(char *package_name, bool dependency) {
             printf(RED
                    "Error: You are not connected to the internet, the update "
                    "cannot happen.\n" RESET);
+
+            set_exit(1);
             break;
         }
 
         if (cperf != CURLE_OK) {
             printf(RED "Error: an unexpected error occured.\n" RESET);
+
+            set_exit(1);
             break;
         }
         fclose(file);
@@ -378,6 +417,8 @@ bool install_software(char *package_name, bool dependency) {
         if (system(build_instructions[i]) != 0 && is_debug()) {
             printf(RED "Error at build instructions numero %d for %s\n" RESET,
                    i, package_name);
+
+            set_exit(1);
             break;
         }
 
@@ -407,6 +448,8 @@ bool install_software(char *package_name, bool dependency) {
         if (system(install_instructions[i]) != 0 && is_debug()) {
             printf("Error at install instructions numero %d for %s\n", i,
                    package_name);
+
+            set_exit(1);
             break;
         }
         if (is_debug())

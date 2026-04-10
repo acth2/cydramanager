@@ -1,7 +1,8 @@
 CydraOS Package manager.
-The package manager needs a mirror in which tracks the updated packages with build instructions and have install
+The package manager needs a mirror to track the updated packages with build instructions and installable softwares. It also needs a file on the guest computer that contains the installed softwares of the user to start updating.
 
 TODO:
  - Make the package manage stable.
  - Be able to use multiple mirrors at the same time
  - Make the package manager compile multiple packages at the same time (mt)
+ - Configuration file

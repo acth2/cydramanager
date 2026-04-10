@@ -23,7 +23,8 @@ executable(
         'src/arguments/debug/debug.c',
         'src/install/install_manager.c',
         'src/remove/remove_manager.c',
-        'src/utilities/utils.c'
+        'src/utilities/utils.c',
+        'src/exit/exit.c'
     ],
     dependencies: [ curl_dep ],
     include_directories: include_directories('.'),

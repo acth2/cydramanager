@@ -1,4 +1,5 @@
 #include "main.h"
+#include "exit/exit.h"
 #include "arguments/arg.h"
 #include "arguments/debug/debug.h"
 #include "install/install_manager.h"
@@ -41,6 +42,9 @@ int main(int argc, char *argv[]) {
             case UPDATE: {
                 SoftwareDB db = get_current_database("/etc/cydramanager.d/sdb");
                 UpdatedDB udb = get_updated_database(db);
+
+                check_crash();
+
                 if (!apply_software_db(db)) {
                     printf(RED "Error: The database could not have been "
                                "updated.\n" RESET);
@@ -62,6 +66,8 @@ int main(int argc, char *argv[]) {
                     char *package_name = argv[i + 1];
                     install_software(package_name, false);
 
+                    check_crash();
+
                     i++;
                 } else {
                     printf(RED
@@ -75,6 +81,8 @@ int main(int argc, char *argv[]) {
                 if (i + 1 < argc) {
                     char *package_name = argv[i + 1];
                     remove_software(package_name);
+
+                    check_crash();
 
                     i++;
                 } else {
@@ -117,3 +125,10 @@ void print_help() {
 };
 
 void print_version() { printf(RESET "cydramanager" YELLOW " 0.1.0\n"); }
+
+void check_crash() {
+    if (did_crash()) {
+        curl_global_cleanup();
+        exit(get_exit());
+    }
+}
