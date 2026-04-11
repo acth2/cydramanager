@@ -1,6 +1,7 @@
 #include "configuration.h"
 #include "../utilities/utils.h"
 #include "src/exit/exit.h"
+#include "src/main.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -14,8 +15,8 @@ char *getSoftwareMirror() {
         printf(RED "Error: the configuration file %s isnt correct.\n" RESET,
                raw_configuration);
 
-        fclose(configuration);
         set_exit(1);
+        check_crash();
         return NULL;
     }
 
@@ -43,6 +44,7 @@ char *getSoftwareMirror() {
                raw_configuration);
 
         set_exit(1);
+        check_crash();
         return NULL;
     }
 
@@ -55,8 +57,8 @@ char *getUpdateArchive() {
         printf(RED "Error: the configuration file %s isnt correct.\n" RESET,
                raw_configuration);
 
-        fclose(configuration);
         set_exit(1);
+        check_crash();
         return NULL;
     }
 
@@ -84,6 +86,7 @@ char *getUpdateArchive() {
                raw_configuration);
 
         set_exit(1);
+        check_crash();
         return NULL;
     }
 
@@ -96,8 +99,8 @@ char *getUpdateArchiveInstructions() {
         printf(RED "Error: the configuration file %s isnt correct.\n" RESET,
                raw_configuration);
 
-        fclose(configuration);
         set_exit(1);
+        check_crash();
         return NULL;
     }
 
@@ -125,6 +128,7 @@ char *getUpdateArchiveInstructions() {
                raw_configuration);
 
         set_exit(1);
+        check_crash();
         return NULL;
     }
 
@@ -137,8 +141,8 @@ char *getTmpFolder() {
         printf(RED "Error: the configuration file %s isnt correct.\n" RESET,
                raw_configuration);
 
-        fclose(configuration);
         set_exit(1);
+        check_crash();
         return NULL;
     }
 
@@ -166,6 +170,7 @@ char *getTmpFolder() {
                raw_configuration);
 
         set_exit(1);
+        check_crash();
         return NULL;
     }
 
@@ -178,8 +183,8 @@ char *getParallelJobs() {
         printf(RED "Error: the configuration file %s isnt correct.\n" RESET,
                raw_configuration);
 
-        fclose(configuration);
         set_exit(1);
+        check_crash();
         return NULL;
     }
 
@@ -207,6 +212,7 @@ char *getParallelJobs() {
                raw_configuration);
 
         set_exit(1);
+        check_crash();
         return NULL;
     }
 
@@ -219,8 +225,8 @@ char *getDepedencyHandling() {
         printf(RED "Error: the configuration file %s isnt correct.\n" RESET,
                raw_configuration);
 
-        fclose(configuration);
         set_exit(1);
+        check_crash();
         return NULL;
     }
 
@@ -248,6 +254,7 @@ char *getDepedencyHandling() {
                raw_configuration);
 
         set_exit(1);
+        check_crash();
         return NULL;
     }
 
@@ -260,8 +267,8 @@ char *getDefaultArg() {
         printf(RED "Error: the configuration file %s isnt correct.\n" RESET,
                raw_configuration);
 
-        fclose(configuration);
         set_exit(1);
+        check_crash();
         return NULL;
     }
 
@@ -289,6 +296,7 @@ char *getDefaultArg() {
                raw_configuration);
 
         set_exit(1);
+        check_crash();
         return NULL;
     }
 
@@ -298,13 +306,10 @@ char *getDefaultArg() {
 void change_configuration(char *path) {
     FILE *configuration = fopen(path, "r");
     if (!configuration) {
-        printf(RED "Error: the configuration file %s isnt correct.\n" RESET,
-               path);
-
         set_exit(1);
+        check_crash();
         return;
     }
     fclose(configuration);
-
     strcpy(raw_configuration, path);
 }

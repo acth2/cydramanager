@@ -1,7 +1,8 @@
 #include "main.h"
-#include "exit/exit.h"
 #include "arguments/arg.h"
 #include "arguments/debug/debug.h"
+#include "configuration/configuration.h"
+#include "exit/exit.h"
 #include "install/install_manager.h"
 #include "src/remove/remove_manager.h"
 #include "update/update_manager.h"
@@ -10,8 +11,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
-#include "configuration/configuration.h"
 
 int main(int argc, char *argv[]) {
     if (geteuid() != 0) {
@@ -34,7 +35,9 @@ int main(int argc, char *argv[]) {
 
                     i++;
                 } else {
-                    printf(RED "Error: the argument %s need to provide a path.\n" RESET, argv[i]);
+                    printf(RED "Error: the argument %s need to provide a "
+                               "path.\n" RESET,
+                           argv[i]);
                 }
             }
         }
@@ -134,7 +137,8 @@ void print_help() {
     printf(YELLOW "   version    " RESET "Show cydramanager version\n");
     printf(RESET "\nArguments:\n");
     printf(YELLOW "   -debug     " RESET "Show detailed informations\n");
-    printf(YELLOW "   -conf      " RESET "Set an explicit configuration file\n");
+    printf(YELLOW "   -conf      " RESET
+                  "Set an explicit configuration file\n");
 };
 
 void print_version() { printf(RESET "cydramanager" YELLOW " 0.1.0\n" RESET); }
@@ -145,3 +149,4 @@ void check_crash() {
         exit(get_exit());
     }
 }
+

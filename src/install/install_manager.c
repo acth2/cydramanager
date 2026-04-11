@@ -161,7 +161,7 @@ bool install_software(char *package_name, bool dependency) {
     CURL *instructions_curl = curl_easy_init();
     char instructions_link[512] = "";
     strcpy(instructions_link, mirror_link);
-    strcat(instructions_link, "instructions/");
+    strcat(instructions_link, "/instructions/");
     strcat(instructions_link, package_name);
 
     if (!instructions_curl || !instructions_file) {
@@ -339,10 +339,10 @@ bool install_software(char *package_name, bool dependency) {
         fclose(file);
         printf("Downloaded the archive for %s\n", package_name);
 
-        char extract_cmd[412];
+        char extract_cmd[1024];
         snprintf(extract_cmd, sizeof(extract_cmd),
-                 "tar xf %s -C %s/%s_space", cache_dir, archive_name,
-                 package_name);
+                 "tar xf %s -C %s", archive_name,
+                 package_directory);
         if (system(extract_cmd) != 0) {
             printf(
                 RED
