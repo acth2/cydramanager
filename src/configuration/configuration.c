@@ -8,7 +8,7 @@ char raw_configuration[] = "/etc/cydramanager.d/configuration.conf";
 
 char *getConfigurationPath() { return raw_configuration; }
 
-char *getMirror() {
+char *getSoftwareMirror() {
     FILE *configuration = fopen(raw_configuration, "r");
     if (!configuration) {
         printf(RED "Error: the configuration file %s isnt correct.\n" RESET,
@@ -20,7 +20,7 @@ char *getMirror() {
     }
 
     char buffer[512];
-    char* keyword = "mirror=";
+    char* keyword = "software-mirror=";
     bool validate = false;
     static char output[512];
     while (fgets(buffer, sizeof(buffer), configuration)) {

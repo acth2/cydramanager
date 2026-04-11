@@ -1,6 +1,7 @@
 #include "update_manager.h"
-#include "../exit/exit.h"
 #include "../arguments/debug/debug.h"
+#include "../configuration/configuration.h"
+#include "../exit/exit.h"
 #include "../utilities/utils.h"
 #include "src/main.h"
 #include <curl/curl.h>
@@ -80,19 +81,26 @@ UpdatedDB get_updated_database(SoftwareDB old_instance) {
     updated_instance.updated_db.software_map =
         malloc(*(old_instance.software_counter) * sizeof(SoftwareMap));
 
-    char *cache_dir = "/tmp/cydramanager.tmp";
+    char *cache_dir = getTmpFolder();
+    char cache_dir_clean_cmd[512];
+    snprintf(cache_dir_clean_cmd, sizeof(cache_dir_clean_cmd), "rm -r %s",
+             cache_dir);
 
-    system("rm -rf /tmp/cydramanager.tmp");
+    system(cache_dir_clean_cmd);
     if (mkdir(cache_dir, 0777) == -1) {
-        printf(RED "Error: could not create a temporary directory in /tmp "
-                   "folder.\n" RESET);
+        printf(RED "Error: could not create a temporary directory\n" RESET);
 
         set_exit(1);
         return updated_instance;
     }
 
     CURL *curl = curl_easy_init();
-    FILE *file = fopen("/tmp/cydramanager.tmp/versions.tar.gz", "wb");
+    char versions_dest[512];
+
+    snprintf(versions_dest, sizeof(versions_dest), "%s/versions.tar.gz",
+             cache_dir);
+
+    FILE *file = fopen(versions_dest, "wb");
 
     if (!curl || !file) {
         printf(RED "Error: Unexpected behaviour during the update of the "
@@ -102,9 +110,7 @@ UpdatedDB get_updated_database(SoftwareDB old_instance) {
         return updated_instance;
     }
 
-    curl_easy_setopt(curl, CURLOPT_URL,
-                     "https://github.com/acth2/cydramanager-db/releases/"
-                     "download/13.0/versions.tar.gz");
+    curl_easy_setopt(curl, CURLOPT_URL, getUpdateArchive());
 
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
@@ -128,8 +134,11 @@ UpdatedDB get_updated_database(SoftwareDB old_instance) {
     }
     fclose(file);
 
-    if (system("tar -xzf /tmp/cydramanager.tmp/versions.tar.gz -C "
-               "/tmp/cydramanager.tmp") != 0) {
+    char extract_update_db_command[512];
+    snprintf(extract_update_db_command, sizeof(extract_update_db_command),
+             "tar -xzf %s/versions.tar.gz -C %s", cache_dir, cache_dir);
+
+    if (system(extract_update_db_command) != 0) {
         printf(RED "Error: Could not extract the database.\n" RESET);
 
         set_exit(1);
@@ -142,7 +151,8 @@ UpdatedDB get_updated_database(SoftwareDB old_instance) {
         malloc(*(old_instance.software_counter) * sizeof(int));
     for (int i = 0; i < *(old_instance.software_counter); i++) {
         char full_path[100];
-        strcpy(full_path, "/tmp/cydramanager.tmp/");
+        strcpy(full_path, cache_dir);
+        strcat(full_path, "/");
         strcat(full_path, old_instance.software_map[i].software_name);
 
         FILE *fptr = fopen(full_path, "r");
@@ -218,8 +228,12 @@ static char download_link[10][MAXIMUM_LENGTH];
 typedef enum { BUILD, INSTALL, DEPENDENCY, DOWNLOAD, NONE } INSTRUCTION_MODE;
 
 void update_package(UpdatedDB update_database, int index, bool dependency) {
+    char instructions_directory[256];
+    snprintf(instructions_directory, sizeof(instructions_directory),
+             "%s/instructions", getTmpFolder());
+
     if (!dependency) {
-        if (mkdir("/tmp/cydramanager.tmp/instructions", 0777) == -1) {
+        if (mkdir(instructions_directory, 0777) == -1) {
             printf(
                 RED
                 "Error: could not create the instructions database.\n" RESET);
@@ -228,9 +242,12 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
             return;
         }
 
+        char instructions_archive[512];
+        snprintf(instructions_archive, sizeof(instructions_archive),
+                 "%s/instructions.tar.gz", instructions_directory);
+
         CURL *curl = curl_easy_init();
-        FILE *file = fopen(
-            "/tmp/cydramanager.tmp/instructions/instructions.tar.gz", "wb");
+        FILE *file = fopen(instructions_archive, "wb");
 
         if (!curl || !file) {
             printf(RED "Error: Unexpected behaviour during the update of the "
@@ -240,9 +257,7 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
             return;
         }
 
-        curl_easy_setopt(curl, CURLOPT_URL,
-                         "https://github.com/acth2/cydramanager-db/releases/"
-                         "download/13.0/instructions.tar.gz");
+        curl_easy_setopt(curl, CURLOPT_URL, getUpdateArchiveInstructions());
 
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
@@ -267,9 +282,12 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
         }
         fclose(file);
 
-        if (system("tar -xzf "
-                   "/tmp/cydramanager.tmp/instructions/instructions.tar.gz -C "
-                   "/tmp/cydramanager.tmp/instructions") != 0) {
+        char instructions_extract_command[1024];
+        snprintf(instructions_extract_command,
+                 sizeof(instructions_extract_command), "tar -xzf %s -C %s",
+                 instructions_archive, instructions_directory);
+
+        if (system(instructions_extract_command) != 0) {
             printf(
                 RED
                 "Error: Could not extract the instructions database.\n" RESET);
@@ -283,7 +301,8 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
     }
 
     char instructions_path[250];
-    strcpy(instructions_path, "/tmp/cydramanager.tmp/instructions/");
+    strcpy(instructions_path, instructions_directory);
+    strcat(instructions_path, "/");
     strcat(instructions_path,
            update_database.updated_db.software_map[index].software_name);
 
@@ -296,9 +315,9 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
         return;
     }
 
-    char package_directory[500];
+    char package_directory[350];
     snprintf(package_directory, sizeof(package_directory),
-             "/tmp/cydramanager.tmp/instructions/%s_space",
+             "%s/%s_space", instructions_directory,
              update_database.updated_db.software_map[index].software_name);
 
     if (mkdir(package_directory, 0777) == -1) {
@@ -376,20 +395,19 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
 
     // download_link
     int i = 0;
-    char archive_directory[512];
+    char archive_directory[256];
     while (true) {
         if (strlen(download_link[i]) <= 0) {
             i = 0;
             break;
         }
 
-        char archive_name[250];
+        char archive_name[350];
         char *software_name =
             update_database.updated_db.software_map[index].software_name;
         snprintf(
             archive_name, sizeof(archive_name),
-            "/tmp/cydramanager.tmp/instructions/%s_space/package_archive_%d",
-            software_name, i);
+            "%s/package_archive_%d", package_directory, i);
 
         download_link[i][strcspn(download_link[i], "\n")] = '\0';
 
@@ -432,10 +450,10 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
         fclose(file);
         printf(RESET "Downloaded the archive for %s\n", software_name);
 
-        char extract_cmd[412];
+        char extract_cmd[762];
         snprintf(extract_cmd, sizeof(extract_cmd),
-                 "tar xf %s -C /tmp/cydramanager.tmp/instructions/%s_space",
-                 archive_name, software_name);
+                 "tar xf %s -C %s",
+                 archive_name, package_directory);
         if (system(extract_cmd) != 0) {
             printf(
                 RED
@@ -448,7 +466,7 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
 
         char archive_space[256];
         snprintf(archive_space, sizeof(archive_space),
-                 "/tmp/cydramanager.tmp/instructions/%s_space", software_name);
+                 "%s", package_directory);
 
         DIR *dir = opendir(archive_space);
         struct dirent *entry;
@@ -587,8 +605,8 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
         }
     }
     char version_path[256];
-    snprintf(version_path, sizeof(version_path), "%s%s",
-             "/tmp/cydramanager.tmp/",
+    snprintf(version_path, sizeof(version_path), "%s/%s",
+             getTmpFolder(),
              update_database.updated_db.software_map[index].software_name);
 
     FILE *user_db_reader = fopen("/etc/cydramanager.d/sdb", "r");

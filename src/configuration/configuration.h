@@ -3,7 +3,7 @@
 
 char* getConfigurationPath();
 
-char* getMirror();
+char* getSoftwareMirror();
 char* getUpdateArchive();
 char* getUpdateArchiveInstructions();
 char* getTmpFolder();

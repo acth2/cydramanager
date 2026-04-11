@@ -1,6 +1,7 @@
 #include "install_manager.h"
 #include "../arguments/debug/debug.h"
 #include "../utilities/utils.h"
+#include "src/configuration/configuration.h"
 #include "src/exit/exit.h"
 #include <curl/curl.h>
 #include <curl/easy.h>
@@ -29,9 +30,11 @@ bool install_software(char *package_name, bool dependency) {
         return false;
     }
 
-    char *cache_dir = "/tmp/cydramanager.tmp";
+    char *cache_dir = getTmpFolder();
+    char remove_tmp_command[512];
+    snprintf(remove_tmp_command, sizeof(remove_tmp_command), "rm -r %s", cache_dir);
     if (!dependency) {
-        system("rm -rf /tmp/cydramanager.tmp");
+        system(remove_tmp_command);
         if (mkdir(cache_dir, 0777) == -1) {
             printf(RED "Error: could not create a temporary directory in /tmp "
                        "folder.\n" RESET);
@@ -41,16 +44,16 @@ bool install_software(char *package_name, bool dependency) {
         }
     }
 
-    char *mirror_link = "https://raw.githubusercontent.com/acth2/"
-                        "cydramanager-db/refs/heads/main/softwares/";
+    char *mirror_link = getSoftwareMirror();
     char package_link[1024] = "";
 
     snprintf(package_link, sizeof(package_link), "%s%s", mirror_link,
              package_name);
 
-    char package_path[512] = "/tmp/cydramanager.tmp/";
-    char package_instructions_path[512] = "/tmp/cydramanager.tmp/instructions";
-    strcat(package_path, package_name);
+    char package_path[512];
+    char package_instructions_path[512];
+    snprintf(package_instructions_path, sizeof(package_instructions_path), "%s/instructions", getTmpFolder());
+    snprintf(package_path, sizeof(package_path), "%s/%s", getTmpFolder(), package_name);
 
     CURL *curl = curl_easy_init();
     FILE *file = fopen(package_path, "wb");
@@ -196,7 +199,7 @@ bool install_software(char *package_name, bool dependency) {
 
     char package_directory[512] = "";
     snprintf(package_directory, sizeof(package_directory), "%s/%s_space",
-             "/tmp/cydramanager.tmp/", package_name);
+             cache_dir, package_name);
 
     if (mkdir(package_directory, 0777) == -1) {
         printf(RED "Error: Could not create the package directory in the "
@@ -290,7 +293,7 @@ bool install_software(char *package_name, bool dependency) {
 
         char archive_name[250];
         snprintf(archive_name, sizeof(archive_name),
-                 "/tmp/cydramanager.tmp/%s_space/package_archive_%d",
+                 "%s/%s_space/package_archive_%d", cache_dir,
                  package_name, i);
 
         download_link[i][strcspn(download_link[i], "\n")] = '\0';
@@ -337,7 +340,7 @@ bool install_software(char *package_name, bool dependency) {
 
         char extract_cmd[412];
         snprintf(extract_cmd, sizeof(extract_cmd),
-                 "tar xf %s -C /tmp/cydramanager.tmp/%s_space", archive_name,
+                 "tar xf %s -C %s/%s_space", cache_dir, archive_name,
                  package_name);
         if (system(extract_cmd) != 0) {
             printf(
@@ -349,7 +352,7 @@ bool install_software(char *package_name, bool dependency) {
 
         char archive_space[256];
         snprintf(archive_space, sizeof(archive_space),
-                 "/tmp/cydramanager.tmp/%s_space", package_name);
+                 "%s/%s_space", cache_dir, package_name);
 
         DIR *dir = opendir(archive_space);
         struct dirent *entry;

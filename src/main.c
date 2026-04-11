@@ -39,13 +39,6 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        char* mirror = getMirror();
-        char* dependencyHandling = getDepedencyHandling();
-        check_crash();
-
-        printf("%s\n", mirror);
-        printf("%s\n", dependencyHandling);
-
         for (int i = 1; i < argc; i++) {
             switch (arg2enum(argv[i])) {
             case HELP: {
