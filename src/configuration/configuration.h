@@ -1,7 +1,6 @@
 #ifndef CONFIGURATION_H
 #define CONFIGURATION_H
 
-char* getConfiguration();
 char* getConfigurationPath();
 
 char* getMirror();
