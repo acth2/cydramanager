@@ -47,7 +47,7 @@ bool install_software(char *package_name, bool dependency) {
     char *mirror_link = getSoftwareMirror();
     char package_link[1024] = "";
 
-    snprintf(package_link, sizeof(package_link), "%s%s", mirror_link,
+    snprintf(package_link, sizeof(package_link), "%s/%s", mirror_link,
              package_name);
 
     char package_path[512];
@@ -102,6 +102,7 @@ bool install_software(char *package_name, bool dependency) {
     fclose(package_version_file);
     package_version[strcspn(package_version, "\n")] = '\0';
 
+    if (is_debug()) printf("version: %s, link: %s\n", package_version, package_link);
     if (strcmp(package_version, "404: Not Found") == 0) {
         if (!dependency) {
             printf(

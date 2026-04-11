@@ -315,7 +315,7 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
         return;
     }
 
-    char package_directory[350];
+    char package_directory[400];
     snprintf(package_directory, sizeof(package_directory),
              "%s/%s_space", instructions_directory,
              update_database.updated_db.software_map[index].software_name);
@@ -395,14 +395,14 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
 
     // download_link
     int i = 0;
-    char archive_directory[256];
+    char archive_directory[750];
     while (true) {
         if (strlen(download_link[i]) <= 0) {
             i = 0;
             break;
         }
 
-        char archive_name[350];
+        char archive_name[450];
         char *software_name =
             update_database.updated_db.software_map[index].software_name;
         snprintf(
@@ -450,7 +450,7 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
         fclose(file);
         printf(RESET "Downloaded the archive for %s\n", software_name);
 
-        char extract_cmd[762];
+        char extract_cmd[870];
         snprintf(extract_cmd, sizeof(extract_cmd),
                  "tar xf %s -C %s",
                  archive_name, package_directory);
@@ -464,7 +464,7 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
             break;
         }
 
-        char archive_space[256];
+        char archive_space[450];
         snprintf(archive_space, sizeof(archive_space),
                  "%s", package_directory);
 

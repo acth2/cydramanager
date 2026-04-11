@@ -13,6 +13,9 @@ cc = meson.get_compiler('c')
 add_project_arguments('-DWLR_USE_UNSTABLE', language: 'c')
 add_project_arguments('-include', '/usr/lib/gcc/x86_64-pc-linux-gnu/14.2.0/include/stddef.h', language: 'c')
 
+config_file = 'src/configuration/configuration.conf'
+config_dir = '/etc/cydramanager.d'
+
 curl_dep = dependency('libcurl', version: '>=8.12.1', required: true)
 
 executable(
@@ -31,3 +34,6 @@ executable(
     include_directories: include_directories('.'),
     install: true
 )
+if get_option('confgen')
+    install_data(config_file, install_dir: config_dir)
+endif
