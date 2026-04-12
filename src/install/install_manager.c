@@ -32,7 +32,8 @@ bool install_software(char *package_name, bool dependency) {
 
     char *cache_dir = getTmpFolder();
     char remove_tmp_command[512];
-    snprintf(remove_tmp_command, sizeof(remove_tmp_command), "rm -r %s", cache_dir);
+    snprintf(remove_tmp_command, sizeof(remove_tmp_command), "rm -r %s",
+             cache_dir);
     if (!dependency) {
         system(remove_tmp_command);
         if (mkdir(cache_dir, 0777) == -1) {
@@ -52,8 +53,10 @@ bool install_software(char *package_name, bool dependency) {
 
     char package_path[512];
     char package_instructions_path[512];
-    snprintf(package_instructions_path, sizeof(package_instructions_path), "%s/instructions", getTmpFolder());
-    snprintf(package_path, sizeof(package_path), "%s/%s", getTmpFolder(), package_name);
+    snprintf(package_instructions_path, sizeof(package_instructions_path),
+             "%s/instructions", getTmpFolder());
+    snprintf(package_path, sizeof(package_path), "%s/%s", getTmpFolder(),
+             package_name);
 
     CURL *curl = curl_easy_init();
     FILE *file = fopen(package_path, "wb");
@@ -102,7 +105,8 @@ bool install_software(char *package_name, bool dependency) {
     fclose(package_version_file);
     package_version[strcspn(package_version, "\n")] = '\0';
 
-    if (is_debug()) printf("version: %s, link: %s\n", package_version, package_link);
+    if (is_debug())
+        printf("version: %s, link: %s\n", package_version, package_link);
     if (strcmp(package_version, "404: Not Found") == 0) {
         if (!dependency) {
             printf(
@@ -125,7 +129,8 @@ bool install_software(char *package_name, bool dependency) {
     FILE *user_software_database = fopen("/etc/cydramanager.d/usdb", "r");
 
     if (!user_software_database) {
-        printf(RED "Error: cannot open the user software database file, does it exist?\n" RESET);
+        printf(RED "Error: cannot open the user software database file, does "
+                   "it exist?\n" RESET);
 
         set_exit(1);
         return false;
@@ -283,6 +288,19 @@ bool install_software(char *package_name, bool dependency) {
         }
     }
 
+    char jobs[128];
+    if (strcmp(getParallelJobs(), "auto") == 0) {
+        long cores = sysconf(_SC_NPROCESSORS_ONLN);
+
+        if (cores < 1) {
+            printf("Warning: could not resolve the numbre of cpu core on the "
+                   "system.");
+            strcpy(jobs, "");
+        } else {
+            snprintf(jobs, sizeof(jobs), "%ld", (cores / 2));
+        }
+    }
+
     // download_link
     int i = 0;
     char archive_directory[512];
@@ -294,8 +312,7 @@ bool install_software(char *package_name, bool dependency) {
 
         char archive_name[250];
         snprintf(archive_name, sizeof(archive_name),
-                 "%s/%s_space/package_archive_%d", cache_dir,
-                 package_name, i);
+                 "%s/%s_space/package_archive_%d", cache_dir, package_name, i);
 
         download_link[i][strcspn(download_link[i], "\n")] = '\0';
 
@@ -340,9 +357,8 @@ bool install_software(char *package_name, bool dependency) {
         printf("Downloaded the archive for %s\n", package_name);
 
         char extract_cmd[1024];
-        snprintf(extract_cmd, sizeof(extract_cmd),
-                 "tar xf %s -C %s", archive_name,
-                 package_directory);
+        snprintf(extract_cmd, sizeof(extract_cmd), "tar xf %s -C %s",
+                 archive_name, package_directory);
         if (system(extract_cmd) != 0) {
             printf(
                 RED
@@ -352,8 +368,8 @@ bool install_software(char *package_name, bool dependency) {
         }
 
         char archive_space[256];
-        snprintf(archive_space, sizeof(archive_space),
-                 "%s/%s_space", cache_dir, package_name);
+        snprintf(archive_space, sizeof(archive_space), "%s/%s_space", cache_dir,
+                 package_name);
 
         DIR *dir = opendir(archive_space);
         struct dirent *entry;
@@ -403,7 +419,7 @@ bool install_software(char *package_name, bool dependency) {
             break;
         }
 
-        replace_proc(build_instructions[i]);
+        replace_proc(build_instructions[i], jobs);
         build_instructions[i][strcspn(build_instructions[i], "\n")] = '\0';
         if (!is_debug())
             strcat(build_instructions[i], " > /dev/null 2>&1");
@@ -444,7 +460,7 @@ bool install_software(char *package_name, bool dependency) {
             break;
         }
 
-        replace_proc(install_instructions[i]);
+        replace_proc(install_instructions[i], jobs);
         install_instructions[i][strcspn(install_instructions[i], "\n")] = '\0';
         if (!is_debug())
             strcat(install_instructions[i], " > /dev/null 2>&1");

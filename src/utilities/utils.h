@@ -10,7 +10,7 @@
 #define RESET   "\033[0m"
 
 char *space_clean(char *str);
-void replace_proc(char *str);
+void replace_proc(char *str, char* replace);
 int is_empty(FILE *f);
 
 #endif

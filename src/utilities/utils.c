@@ -18,7 +18,7 @@ char *space_clean(char *str) {
     return str;
 }
 
-void replace_proc(char *str) {
+void replace_proc(char *str, char *replace) {
     char buffer[1024];
     char *pos;
 
@@ -27,7 +27,7 @@ void replace_proc(char *str) {
 
         strncat(buffer, str, pos - str);
 
-        strcat(buffer, "4");
+        strcat(buffer, replace);
 
         strcat(buffer, pos + 8);
         strcpy(str, buffer);

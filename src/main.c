@@ -11,7 +11,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 
 int main(int argc, char *argv[]) {
@@ -137,11 +136,10 @@ void print_help() {
     printf(YELLOW "   version    " RESET "Show cydramanager version\n");
     printf(RESET "\nArguments:\n");
     printf(YELLOW "   -debug     " RESET "Show detailed informations\n");
-    printf(YELLOW "   -conf      " RESET
-                  "Set an explicit configuration file\n");
+    printf(YELLOW "   -conf      " RESET "Set an explicit configuration file\n");
 };
 
-void print_version() { printf(RESET "cydramanager" YELLOW " 0.1.0\n" RESET); }
+void print_version() { printf(RESET "cydramanager" YELLOW " 1.1.0\n" RESET); }
 
 void check_crash() {
     if (did_crash()) {

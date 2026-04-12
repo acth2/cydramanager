@@ -5,4 +5,3 @@ TODO:
  - Make the package manage stable.
  - Be able to use multiple mirrors at the same time
  - Make the package manager compile multiple packages at the same time (mt)
- - Configuration file
