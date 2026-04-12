@@ -1,7 +1,7 @@
-#include <ctype.h>
-#include <string.h>
-#include <stdio.h>
 #include "utils.h"
+#include <ctype.h>
+#include <stdio.h>
+#include <string.h>
 
 char *space_clean(char *str) {
     if (!str)

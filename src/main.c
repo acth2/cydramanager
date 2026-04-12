@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 int main(int argc, char *argv[]) {
@@ -23,6 +24,27 @@ int main(int argc, char *argv[]) {
     curl_global_init(CURL_GLOBAL_SSL);
     if (argc > 1) {
         for (int i = 1; i < argc; i++) {
+            char *default_args = getDefaultArg();
+            if (strlen(default_args) > 0) {
+                //       numero       arg
+                char args[128]        [512];
+                int i = 0;
+
+                char *token = strtok(default_args, " ");
+
+                while (token != NULL) {
+                    strcpy(args[i], token);
+                    i++;
+                    token = strtok(NULL, " ");
+                }
+
+                for (int j = 0; j < i; j++) {
+                    if (arg2enum(args[j]) == ARG_DEBUG) {
+                        set_debug(true);
+                    }
+                }
+            }
+
             if (arg2enum(argv[i]) == ARG_DEBUG) {
                 set_debug(true);
             }

@@ -11,6 +11,8 @@ project(
 cc = meson.get_compiler('c')
 
 add_project_arguments('-DWLR_USE_UNSTABLE', language: 'c')
+
+add_project_arguments('-include', 'stddef.h', language: 'c')
 add_project_arguments('-include', '/usr/lib/gcc/x86_64-pc-linux-gnu/14.2.0/include/stddef.h', language: 'c')
 
 config_file = 'src/configuration/configuration.conf'
