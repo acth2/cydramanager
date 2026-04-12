@@ -293,8 +293,8 @@ bool install_software(char *package_name, bool dependency) {
         long cores = sysconf(_SC_NPROCESSORS_ONLN);
 
         if (cores < 1) {
-            printf("Warning: could not resolve the numbre of cpu core on the "
-                   "system.");
+            printf(RESET "Warning: could not resolve the numbre of cpu core on the "
+                   "system.\n");
             strcpy(jobs, "");
         } else {
             snprintf(jobs, sizeof(jobs), "%ld", (cores / 2));

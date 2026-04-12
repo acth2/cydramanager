@@ -316,8 +316,8 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
     }
 
     char package_directory[400];
-    snprintf(package_directory, sizeof(package_directory),
-             "%s/%s_space", instructions_directory,
+    snprintf(package_directory, sizeof(package_directory), "%s/%s_space",
+             instructions_directory,
              update_database.updated_db.software_map[index].software_name);
 
     if (mkdir(package_directory, 0777) == -1) {
@@ -393,6 +393,20 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
         }
     }
 
+    char jobs[128];
+    if (strcmp(getParallelJobs(), "auto") == 0) {
+        long cores = sysconf(_SC_NPROCESSORS_ONLN);
+
+        if (cores < 1) {
+            printf(RESET
+                   "Warning: could not resolve the numbre of cpu core on the "
+                   "system.\n");
+            strcpy(jobs, "");
+        } else {
+            snprintf(jobs, sizeof(jobs), "%ld", (cores / 2));
+        }
+    }
+
     // download_link
     int i = 0;
     char archive_directory[750];
@@ -405,9 +419,8 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
         char archive_name[450];
         char *software_name =
             update_database.updated_db.software_map[index].software_name;
-        snprintf(
-            archive_name, sizeof(archive_name),
-            "%s/package_archive_%d", package_directory, i);
+        snprintf(archive_name, sizeof(archive_name), "%s/package_archive_%d",
+                 package_directory, i);
 
         download_link[i][strcspn(download_link[i], "\n")] = '\0';
 
@@ -451,8 +464,7 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
         printf(RESET "Downloaded the archive for %s\n", software_name);
 
         char extract_cmd[870];
-        snprintf(extract_cmd, sizeof(extract_cmd),
-                 "tar xf %s -C %s",
+        snprintf(extract_cmd, sizeof(extract_cmd), "tar xf %s -C %s",
                  archive_name, package_directory);
         if (system(extract_cmd) != 0) {
             printf(
@@ -465,8 +477,7 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
         }
 
         char archive_space[450];
-        snprintf(archive_space, sizeof(archive_space),
-                 "%s", package_directory);
+        snprintf(archive_space, sizeof(archive_space), "%s", package_directory);
 
         DIR *dir = opendir(archive_space);
         struct dirent *entry;
@@ -539,7 +550,7 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
             break;
         }
 
-        replace_proc(build_instructions[i]);
+        replace_proc(build_instructions[i], jobs);
         build_instructions[i][strcspn(build_instructions[i], "\n")] = '\0';
         if (!is_debug())
             strcat(build_instructions[i], " > /dev/null 2>&1");
@@ -581,7 +592,7 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
             break;
         }
 
-        replace_proc(install_instructions[i]);
+        replace_proc(install_instructions[i], jobs);
         install_instructions[i][strcspn(install_instructions[i], "\n")] = '\0';
         if (!is_debug())
             strcat(install_instructions[i], " > /dev/null 2>&1");
@@ -605,8 +616,7 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
         }
     }
     char version_path[256];
-    snprintf(version_path, sizeof(version_path), "%s/%s",
-             getTmpFolder(),
+    snprintf(version_path, sizeof(version_path), "%s/%s", getTmpFolder(),
              update_database.updated_db.software_map[index].software_name);
 
     FILE *user_db_reader = fopen("/etc/cydramanager.d/sdb", "r");
