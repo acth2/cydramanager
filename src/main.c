@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
         for (int i = 1; i < argc; i++) {
             char *default_args = getDefaultArg();
             if (strlen(default_args) > 0) {
-                char args[128]        [512];
+                char args[128][512];
                 int i = 0;
 
                 char *token = strtok(default_args, " ");
@@ -62,82 +62,86 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        for (int i = 1; i < argc; i++) {
-            switch (arg2enum(argv[i])) {
-            case HELP: {
-                print_help();
-                break;
-            }
+        if (is_debug() && getDepedencyHandling())
+            printf(RESET "Handling dependencies\n");
 
-            case VERSION: {
-                print_version();
-                break;
-            }
-
-            case UPDATE: {
-                SoftwareDB db = get_current_database("/etc/cydramanager.d/sdb");
-                UpdatedDB udb = get_updated_database(db);
-
-                check_crash();
-
-                if (!apply_software_db(db)) {
-                    printf(RED "Error: The database could not have been "
-                               "updated.\n" RESET);
+                for (int i = 1; i < argc; i++) {
+                switch (arg2enum(argv[i])) {
+                case HELP: {
+                    print_help();
                     break;
                 }
 
-                for (int i = 0; i < udb.outdated_size; i++) {
-                    int index = udb.outdated_index[i];
-                    update_package(udb, index, i <= 0 ? false : true);
+                case VERSION: {
+                    print_version();
+                    break;
                 }
 
-                free(udb.updated_db.software_map);
-                free(udb.outdated_index);
-                break;
-            }
-
-            case INSTALL: {
-                if (i + 1 < argc) {
-                    char *package_name = argv[i + 1];
-                    install_software(package_name, false);
+                case UPDATE: {
+                    SoftwareDB db =
+                        get_current_database("/etc/cydramanager.d/sdb");
+                    UpdatedDB udb = get_updated_database(db);
 
                     check_crash();
 
-                    i++;
-                } else {
-                    printf(RED
-                           "Error: you need to provide a package name in order "
-                           "to install it.\n" RESET);
+                    if (!apply_software_db(db)) {
+                        printf(RED "Error: The database could not have been "
+                                   "updated.\n" RESET);
+                        break;
+                    }
+
+                    for (int i = 0; i < udb.outdated_size; i++) {
+                        int index = udb.outdated_index[i];
+                        update_package(udb, index, i <= 0 ? false : true);
+                    }
+
+                    free(udb.updated_db.software_map);
+                    free(udb.outdated_index);
+                    break;
                 }
-                break;
-            }
 
-            case UNINSTALL: {
-                if (i + 1 < argc) {
-                    char *package_name = argv[i + 1];
-                    remove_software(package_name);
+                case INSTALL: {
+                    if (i + 1 < argc) {
+                        char *package_name = argv[i + 1];
+                        install_software(package_name, false);
 
-                    check_crash();
+                        check_crash();
 
-                    i++;
-                } else {
-                    printf(RED
-                           "Error: you need to provide a package name in order "
-                           "to remove it.\n" RESET);
+                        i++;
+                    } else {
+                        printf(RED "Error: you need to provide a package name "
+                                   "in order "
+                                   "to install it.\n" RESET);
+                    }
+                    break;
                 }
-                break;
-            }
 
-            case UNK: {
-                printf("unknown command %s, use --help to see available "
-                       "options.\n",
-                       argv[i]);
-                break;
+                case UNINSTALL: {
+                    if (i + 1 < argc) {
+                        char *package_name = argv[i + 1];
+                        remove_software(package_name);
+
+                        check_crash();
+
+                        i++;
+                    } else {
+                        printf(RED "Error: you need to provide a package name "
+                                   "in order "
+                                   "to remove it.\n" RESET);
+                    }
+                    break;
+                }
+
+                case UNK: {
+                    printf("unknown command %s, use --help to see available "
+                           "options.\n",
+                           argv[i]);
+                    break;
+                }
+                default:
+                    break;
+                }
             }
-            default:
-                break;
-            }
-        }
         curl_global_cleanup();
         return 0;
     }
@@ -157,7 +161,8 @@ void print_help() {
     printf(YELLOW "   version    " RESET "Show cydramanager version\n");
     printf(RESET "\nArguments:\n");
     printf(YELLOW "   -debug     " RESET "Show detailed informations\n");
-    printf(YELLOW "   -conf      " RESET "Set an explicit configuration file\n");
+    printf(YELLOW "   -conf      " RESET
+                  "Set an explicit configuration file\n");
 };
 
 void print_version() { printf(RESET "cydramanager" YELLOW " 1.1.0\n" RESET); }
@@ -168,4 +173,3 @@ void check_crash() {
         exit(get_exit());
     }
 }
-

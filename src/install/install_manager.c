@@ -420,19 +420,22 @@ bool install_software(char *package_name, bool dependency) {
     i = 0;
 
     // dependency_instructions
-    while (true) {
-        if (strlen(dependency_instructions[i]) <= 0) {
-            break;
-        }
+    if (getDepedencyHandling()) {
+        while (true) {
+            if (strlen(dependency_instructions[i]) <= 0) {
+                break;
+            }
 
-        printf(GRAY "-> Installing dependency %s for the package %s\n" RESET,
-               dependency_instructions[i], package_name);
-        install_software(dependency_instructions[i], true);
+            printf(GRAY
+                   "-> Installing dependency %s for the package %s\n" RESET,
+                   dependency_instructions[i], package_name);
+            install_software(dependency_instructions[i], true);
 
-        i++;
-        if (i >= 500) {
-            printf("Warning: Loop max use reached (500).\n");
-            break;
+            i++;
+            if (i >= 500) {
+                printf("Warning: Loop max use reached (500).\n");
+                break;
+            }
         }
     }
 

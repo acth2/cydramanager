@@ -416,7 +416,8 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
 
             snprintf(jobs, sizeof(jobs), "%s", getParallelJobs());
         } else {
-            printf(RESET "Warning: %s is not valid using auto by default\n", getParallelJobs());
+            printf(RESET "Warning: %s is not valid using auto by default\n",
+                   getParallelJobs());
             long cores = sysconf(_SC_NPROCESSORS_ONLN);
             if (cores < 1) {
                 printf("Error: could not resolve the numbers of cpu cores on "
@@ -526,39 +527,42 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
     i = 0;
 
     // dependency_instructions
-    while (true) {
-        if (strlen(dependency_instructions[i]) <= 0) {
-            break;
-        }
-
-        dependency_instructions[i][strcspn(dependency_instructions[i], "\n")] =
-            '\0';
-        char *token;
-        char *separator = " ";
-        for (int j = 0; j >= *(update_database.updated_db.software_counter);
-             j++) {
-            token = strtok(dependency_instructions[i], separator);
-            if (strcmp(token, update_database.updated_db.software_map[j]
-                                  .software_name) != 0)
-                continue;
-            token = strtok(NULL, separator);
-            if (strcmp(token, update_database.updated_db.software_map[j]
-                                  .software_version) == 0) {
-                printf(
-                    RESET "Dependency %s already up to date, skipping\n",
-                    update_database.updated_db.software_map[j].software_name);
+    if (getDepedencyHandling()) {
+        while (true) {
+            if (strlen(dependency_instructions[i]) <= 0) {
                 break;
             }
 
-            printf(RESET "Updating dependency %s\n",
-                   update_database.updated_db.software_map[j].software_name);
-            update_package(update_database, j, true);
-        }
+            dependency_instructions[i][strcspn(dependency_instructions[i],
+                                               "\n")] = '\0';
+            char *token;
+            char *separator = " ";
+            for (int j = 0; j >= *(update_database.updated_db.software_counter);
+                 j++) {
+                token = strtok(dependency_instructions[i], separator);
+                if (strcmp(token, update_database.updated_db.software_map[j]
+                                      .software_name) != 0)
+                    continue;
+                token = strtok(NULL, separator);
+                if (strcmp(token, update_database.updated_db.software_map[j]
+                                      .software_version) == 0) {
+                    printf(RESET "Dependency %s already up to date, skipping\n",
+                           update_database.updated_db.software_map[j]
+                               .software_name);
+                    break;
+                }
 
-        i++;
-        if (i >= 500) {
-            printf(RESET "Warning: Loop max use reached (500).\n");
-            break;
+                printf(
+                    RESET "Updating dependency %s\n",
+                    update_database.updated_db.software_map[j].software_name);
+                update_package(update_database, j, true);
+            }
+
+            i++;
+            if (i >= 500) {
+                printf(RESET "Warning: Loop max use reached (500).\n");
+                break;
+            }
         }
     }
 

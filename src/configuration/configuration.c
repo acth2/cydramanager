@@ -219,7 +219,7 @@ char *getParallelJobs() {
     return output;
 }
 
-char *getDepedencyHandling() {
+bool getDepedencyHandling() {
     FILE *configuration = fopen(raw_configuration, "r");
     if (!configuration) {
         printf(RED "Error: the configuration file %s isnt correct.\n" RESET,
@@ -232,8 +232,9 @@ char *getDepedencyHandling() {
 
     char buffer[512];
     bool validate = false;
+    bool result = false;
     char* keyword = "dependency-handling=";
-    static char output[512];
+    char output[512];
     while (fgets(buffer, sizeof(buffer), configuration)) {
         if (buffer[0] == '#') {
             continue;
@@ -242,7 +243,14 @@ char *getDepedencyHandling() {
         if (strncmp(buffer, keyword, strlen(keyword)) == 0) {
             buffer[strcspn(buffer, "\n")] = '\0';
             strcpy(output, buffer + strlen(keyword));
+
             validate = true;
+            if (strcmp(output, "install") == 0) {
+                result = true;
+                break;
+            }
+            
+            result = false;
             break;
         }
     }
@@ -258,7 +266,7 @@ char *getDepedencyHandling() {
         return NULL;
     }
 
-    return output;
+    return result;
 }
 
 char *getDefaultArg() {
