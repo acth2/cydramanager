@@ -188,9 +188,20 @@ bool apply_software_db(SoftwareDB db) {
     struct timeval foo;
     gettimeofday(&foo, NULL);
 
+    mkdir("/etc/cydramanager.d/archives", 0777);
+    long long archives_size_bytes = get_dir_size("/etc/cydramanager.d/archives");
+    double    archives_size_mo    = archives_size_bytes / (1024.0 * 1024.0);
+
+    if (archives_size_mo >= 10) {
+        printf(RESET "Cleaning the archives directory\n");
+        if (system("rm -r /etc/cydramanager.d/archives/sdb_*") != 0) {
+            printf(RESET "Warning: could not clean the /etc/cydramanager.d/archives directory\n");
+        }
+    }
+
     char old_db_path_fused[128] = "";
     snprintf(old_db_path_fused, sizeof(old_db_path_fused),
-             "/etc/cydramanager.d/sdb_%ld_%ld", foo.tv_sec, foo.tv_usec);
+             "/etc/cydramanager.d/archives/sdb_%ld_%ld", foo.tv_sec, foo.tv_usec);
 
     if (rename("/etc/cydramanager.d/sdb", old_db_path_fused) != 0) {
         printf(RED "Error: could not rename the old database.\n" RESET);

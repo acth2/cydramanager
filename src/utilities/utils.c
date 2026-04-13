@@ -2,6 +2,8 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
+#include <dirent.h>
+#include <sys/stat.h>
 
 char *space_clean(char *str) {
     if (!str)
@@ -51,4 +53,33 @@ int is_number(const char *str) {
         str++;
     }
     return 1;
+}
+
+long long get_dir_size(const char *path) {
+    DIR *dir = opendir(path);
+    if (!dir) return 0;
+
+    struct dirent *entry;
+    long long total = 0;
+
+    while ((entry = readdir(dir)) != NULL) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+            continue;
+
+        char fullpath[1024];
+        snprintf(fullpath, sizeof(fullpath), "%s/%s", path, entry->d_name);
+
+        struct stat st;
+        if (stat(fullpath, &st) == -1)
+            continue;
+
+        if (S_ISDIR(st.st_mode)) {
+            total += get_dir_size(fullpath);
+        } else {
+            total += st.st_size;
+        }
+    }
+
+    closedir(dir);
+    return total;
 }
