@@ -65,83 +65,82 @@ int main(int argc, char *argv[]) {
         if (is_debug() && getDepedencyHandling())
             printf(RESET "Handling dependencies\n");
 
-                for (int i = 1; i < argc; i++) {
-                switch (arg2enum(argv[i])) {
-                case HELP: {
-                    print_help();
+        for (int i = 1; i < argc; i++) {
+            switch (arg2enum(argv[i])) {
+            case HELP: {
+                print_help();
+                break;
+            }
+
+            case VERSION: {
+                print_version();
+                break;
+            }
+
+            case UPDATE: {
+                SoftwareDB db = get_current_database("/etc/cydramanager.d/sdb");
+                UpdatedDB udb = get_updated_database(db);
+
+                check_crash();
+
+                if (!apply_software_db(db)) {
+                    printf(RED "Error: The database could not have been "
+                               "updated.\n" RESET);
                     break;
                 }
 
-                case VERSION: {
-                    print_version();
-                    break;
+                for (int i = 0; i < udb.outdated_size; i++) {
+                    int index = udb.outdated_index[i];
+                    update_package(udb, index, i <= 0 ? false : true);
                 }
 
-                case UPDATE: {
-                    SoftwareDB db =
-                        get_current_database("/etc/cydramanager.d/sdb");
-                    UpdatedDB udb = get_updated_database(db);
+                free(udb.updated_db.software_map);
+                free(udb.outdated_index);
+                break;
+            }
+
+            case INSTALL: {
+                if (i + 1 < argc) {
+                    char *package_name = argv[i + 1];
+                    install_software(package_name, false);
 
                     check_crash();
 
-                    if (!apply_software_db(db)) {
-                        printf(RED "Error: The database could not have been "
-                                   "updated.\n" RESET);
-                        break;
-                    }
-
-                    for (int i = 0; i < udb.outdated_size; i++) {
-                        int index = udb.outdated_index[i];
-                        update_package(udb, index, i <= 0 ? false : true);
-                    }
-
-                    free(udb.updated_db.software_map);
-                    free(udb.outdated_index);
-                    break;
+                    i++;
+                } else {
+                    printf(RED "Error: you need to provide a package name "
+                               "in order "
+                               "to install it.\n" RESET);
                 }
-
-                case INSTALL: {
-                    if (i + 1 < argc) {
-                        char *package_name = argv[i + 1];
-                        install_software(package_name, false);
-
-                        check_crash();
-
-                        i++;
-                    } else {
-                        printf(RED "Error: you need to provide a package name "
-                                   "in order "
-                                   "to install it.\n" RESET);
-                    }
-                    break;
-                }
-
-                case UNINSTALL: {
-                    if (i + 1 < argc) {
-                        char *package_name = argv[i + 1];
-                        remove_software(package_name);
-
-                        check_crash();
-
-                        i++;
-                    } else {
-                        printf(RED "Error: you need to provide a package name "
-                                   "in order "
-                                   "to remove it.\n" RESET);
-                    }
-                    break;
-                }
-
-                case UNK: {
-                    printf("unknown command %s, use --help to see available "
-                           "options.\n",
-                           argv[i]);
-                    break;
-                }
-                default:
-                    break;
-                }
+                break;
             }
+
+            case UNINSTALL: {
+                if (i + 1 < argc) {
+                    char *package_name = argv[i + 1];
+                    remove_software(package_name);
+
+                    check_crash();
+
+                    i++;
+                } else {
+                    printf(RED "Error: you need to provide a package name "
+                               "in order "
+                               "to remove it.\n" RESET);
+                }
+                break;
+            }
+
+            case UNK: {
+                printf("unknown command %s, use --help to see available "
+                       "options.\n",
+                       argv[i]);
+                break;
+            }
+            default:
+                break;
+            }
+        }
         curl_global_cleanup();
         return 0;
     }
