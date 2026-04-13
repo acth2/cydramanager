@@ -405,6 +405,28 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
         } else {
             snprintf(jobs, sizeof(jobs), "%ld", (cores / 2));
         }
+    } else {
+        char *endptr;
+
+        long askedJobs = strtol(getParallelJobs(), &endptr, 10);
+        if (*endptr == '\0') {
+            if (is_debug())
+                printf(RESET "Using %ld jobs as asked on the configuration.\n",
+                       askedJobs);
+
+            snprintf(jobs, sizeof(jobs), "%s", getParallelJobs());
+        } else {
+            printf(RESET "Warning: %s is not valid using auto by default\n", getParallelJobs());
+            long cores = sysconf(_SC_NPROCESSORS_ONLN);
+            if (cores < 1) {
+                printf("Error: could not resolve the numbers of cpu cores on "
+                       "the system.\n");
+                set_exit(1);
+                return;
+            } else {
+                snprintf(jobs, sizeof(jobs), "%ld", (cores / 2));
+            }
+        }
     }
 
     // download_link

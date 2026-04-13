@@ -26,7 +26,6 @@ int main(int argc, char *argv[]) {
         for (int i = 1; i < argc; i++) {
             char *default_args = getDefaultArg();
             if (strlen(default_args) > 0) {
-                //       numero       arg
                 char args[128]        [512];
                 int i = 0;
 

@@ -11,6 +11,7 @@
 
 char *space_clean(char *str);
 void replace_proc(char *str, char* replace);
+int is_number(const char *str);
 int is_empty(FILE *f);
 
 #endif

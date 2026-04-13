@@ -40,3 +40,15 @@ int is_empty(FILE *f) {
     rewind(f);
     return size == 0;
 }
+
+int is_number(const char *str) {
+    if (*str == '\0') return 0;
+
+    while (*str) {
+        if (!isdigit((unsigned char)*str)) {
+            return 0;
+        }
+        str++;
+    }
+    return 1;
+}
