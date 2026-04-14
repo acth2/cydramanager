@@ -219,7 +219,7 @@ char *getParallelJobs() {
     return output;
 }
 
-bool getDepedencyHandling() {
+enum DEPENDENCY_HANDLING getDepedencyHandling() {
     FILE *configuration = fopen(raw_configuration, "r");
     if (!configuration) {
         printf(RED "Error: the configuration file %s isnt correct.\n" RESET,
@@ -227,12 +227,12 @@ bool getDepedencyHandling() {
 
         set_exit(1);
         check_crash();
-        return NULL;
+        return NORMAL;
     }
 
     char buffer[512];
     bool validate = false;
-    bool result = false;
+    static enum DEPENDENCY_HANDLING result = NORMAL;
     char* keyword = "dependency-handling=";
     char output[512];
     while (fgets(buffer, sizeof(buffer), configuration)) {
@@ -246,11 +246,15 @@ bool getDepedencyHandling() {
 
             validate = true;
             if (strcmp(output, "install") == 0) {
-                result = true;
+                break;
+            }
+
+            if (strcmp(output, "ask") == 0) {
+                result = ASK;
                 break;
             }
             
-            result = false;
+            result = IGNORE;
             break;
         }
     }
@@ -263,7 +267,7 @@ bool getDepedencyHandling() {
 
         set_exit(1);
         check_crash();
-        return NULL;
+        return NORMAL;
     }
 
     return result;

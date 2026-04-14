@@ -429,6 +429,24 @@ bool install_software(char *package_name, bool dependency) {
             printf(GRAY
                    "-> Installing dependency %s for the package %s\n" RESET,
                    dependency_instructions[i], package_name);
+
+            if (getDepedencyHandling() == ASK) {
+                char resp;
+
+                do {
+                    printf(YELLOW "-> Do you want to install the dependency "
+                                  "%s? (y/n)\n" RESET,
+                           package_name);
+                    scanf(" %c", &resp);
+                } while (resp != 'y' && resp != 'Y' && resp != 'n' &&
+                         resp != 'N');
+
+                if (resp == 'n' || resp == 'N') {
+                    printf(GRAY "Skipping dependency.\n" RESET);
+                    i++;
+                    break;
+                }
+            }
             install_software(dependency_instructions[i], true);
 
             i++;

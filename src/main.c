@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        if (is_debug() && getDepedencyHandling())
+        if (is_debug() && getDepedencyHandling() != IGNORE)
             printf(RESET "Handling dependencies\n");
 
         for (int i = 1; i < argc; i++) {
