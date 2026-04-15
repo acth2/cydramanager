@@ -424,7 +424,7 @@ bool install_software(char *package_name, bool dependency) {
     i = 0;
 
     // dependency_instructions
-    if (getDepedencyHandling()) {
+    if (getDepedencyHandling() != IGNORE) {
         while (true) {
             if (strlen(dependency_instructions[i]) <= 0) {
                 break;
