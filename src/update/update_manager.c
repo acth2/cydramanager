@@ -234,17 +234,17 @@ bool apply_software_db(SoftwareDB db) {
     return true;
 }
 
-static char build_instructions[MAXIMUM_LINES][MAXIMUM_LENGTH];
-static char install_instructions[MAXIMUM_LINES][MAXIMUM_LENGTH];
-static char dependency_instructions[256][MAXIMUM_LENGTH];
-static char download_link[10][MAXIMUM_LENGTH];
-
 typedef enum { BUILD, INSTALL, DEPENDENCY, DOWNLOAD, NONE } INSTRUCTION_MODE;
 
 void update_package(UpdatedDB update_database, int index, bool dependency) {
     char instructions_directory[256];
     snprintf(instructions_directory, sizeof(instructions_directory),
              "%s/instructions", getTmpFolder());
+
+    build_instructions = calloc(MAXIMUM_LINES, MAXIMUM_LENGTH);
+    install_instructions = calloc(MAXIMUM_LINES, MAXIMUM_LENGTH);
+    dependency_instructions = calloc(256, MAXIMUM_LENGTH);
+    download_link = calloc(10, MAXIMUM_LENGTH);
 
     if (!dependency) {
         if (mkdir(instructions_directory, 0777) == -1) {

@@ -1,8 +1,10 @@
 #include "install_manager.h"
-#include "../arguments/debug/debug.h"
-#include "../utilities/utils.h"
 #include "..//configuration/configuration.h"
+#include "../arguments/debug/debug.h"
 #include "../exit/exit.h"
+#include "../utilities/utils.h"
+#include "src/update/update_manager.h"
+#include <bits/pthreadtypes.h>
 #include <curl/curl.h>
 #include <curl/easy.h>
 #include <dirent.h>
@@ -12,11 +14,6 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
-
-static char build_instructions[MAXIMUM_LINES][MAXIMUM_LENGTH];
-static char install_instructions[MAXIMUM_LINES][MAXIMUM_LENGTH];
-static char dependency_instructions[256][MAXIMUM_LENGTH];
-static char download_link[10][MAXIMUM_LENGTH];
 
 typedef enum { BUILD, INSTALL, DEPENDENCY, DOWNLOAD, NONE } INSTRUCTION_MODE;
 
@@ -29,6 +26,14 @@ bool install_software(char *package_name, bool dependency) {
         set_exit(1);
         return false;
     }
+
+    char(*build_instructions)[MAXIMUM_LENGTH] =
+        calloc(MAXIMUM_LINES, MAXIMUM_LENGTH);
+    char(*install_instructions)[MAXIMUM_LENGTH] =
+        calloc(MAXIMUM_LINES, MAXIMUM_LENGTH);
+    char(*dependency_instructions)[MAXIMUM_LENGTH] =
+        calloc(256, MAXIMUM_LENGTH);
+    char(*download_link)[MAXIMUM_LENGTH] = calloc(10, MAXIMUM_LENGTH);
 
     char *cache_dir = getTmpFolder();
     char remove_tmp_command[512];
@@ -460,7 +465,12 @@ bool install_software(char *package_name, bool dependency) {
                 }
             }
 
+            char saved_cwd[1024];
+            getcwd(saved_cwd, sizeof(saved_cwd));
+
             install_software(dependency_name, true);
+
+            chdir(saved_cwd);
 
             i++;
             if (i >= 500) {
@@ -471,7 +481,8 @@ bool install_software(char *package_name, bool dependency) {
     }
 
     // build_instructions
-    if (is_debug()) printf("Execution build_instructions for %s\n", package_name);
+    if (is_debug())
+        printf("Execution build_instructions for %s\n", package_name);
     i = 0;
     while (true) {
         if (strlen(build_instructions[i]) <= 0) {
@@ -573,6 +584,11 @@ bool install_software(char *package_name, bool dependency) {
 
     rename("/etc/cydramanager.d/usdb", "/etc/cydramanager.d/usdb_old");
     rename("/etc/cydramanager.d/temp", "/etc/cydramanager.d/usdb");
+
+    free(build_instructions);
+    free(install_instructions);
+    free(dependency_instructions);
+    free(download_link);
 
     printf("Installation for the package %s is done.\n", package_name);
 
