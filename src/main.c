@@ -92,11 +92,6 @@ int main(int argc, char *argv[]) {
                 for (int i = 0; i < udb.outdated_size; i++) {
                     int index = udb.outdated_index[i];
                     update_package(udb, index, i <= 0 ? false : true);
-
-                    free(build_instructions);
-                    free(install_instructions);
-                    free(dependency_instructions);
-                    free(download_link);
                 }
 
                 free(udb.updated_db.software_map);

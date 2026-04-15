@@ -3,7 +3,6 @@
 #include "../arguments/debug/debug.h"
 #include "../exit/exit.h"
 #include "../utilities/utils.h"
-#include "src/update/update_manager.h"
 #include <bits/pthreadtypes.h>
 #include <curl/curl.h>
 #include <curl/easy.h>

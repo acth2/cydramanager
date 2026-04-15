@@ -236,6 +236,18 @@ bool apply_software_db(SoftwareDB db) {
 
 typedef enum { BUILD, INSTALL, DEPENDENCY, DOWNLOAD, NONE } INSTRUCTION_MODE;
 
+char (*build_instructions)[MAXIMUM_LENGTH];
+char (*install_instructions)[MAXIMUM_LENGTH];
+char (*dependency_instructions)[MAXIMUM_LENGTH];
+char (*download_link)[MAXIMUM_LENGTH];
+
+void on_update_crash() {
+    free(build_instructions);
+    free(install_instructions);
+    free(dependency_instructions);
+    free(download_link);
+}
+
 void update_package(UpdatedDB update_database, int index, bool dependency) {
     char instructions_directory[256];
     snprintf(instructions_directory, sizeof(instructions_directory),
@@ -253,6 +265,7 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
                 "Error: could not create the instructions database.\n" RESET);
 
             set_exit(1);
+            on_update_crash();
             return;
         }
 
@@ -268,6 +281,7 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
                        "instructions databases.\n" RESET);
 
             set_exit(1);
+            on_update_crash();
             return;
         }
 
@@ -285,6 +299,7 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
                    "cannot happen.\n" RESET);
 
             set_exit(1);
+            on_update_crash();
             return;
         }
 
@@ -292,6 +307,7 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
             printf(RED "Error: an unexpected error occured.\n" RESET);
 
             set_exit(1);
+            on_update_crash();
             return;
         }
         fclose(file);
@@ -307,6 +323,7 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
                 "Error: Could not extract the instructions database.\n" RESET);
 
             set_exit(1);
+            on_update_crash();
             return;
         }
         printf(
@@ -326,6 +343,7 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
                update_database.updated_db.software_map[index].software_name);
 
         set_exit(1);
+        on_update_crash();
         return;
     }
 
@@ -340,6 +358,7 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
                update_database.updated_db.software_map[index].software_name);
 
         set_exit(1);
+        on_update_crash();
         return;
     }
 
@@ -437,6 +456,7 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
                 printf("Error: could not resolve the numbers of cpu cores on "
                        "the system.\n");
                 set_exit(1);
+                on_update_crash();
                 return;
             } else {
                 snprintf(jobs, sizeof(jobs), "%ld", (cores / 2));
@@ -725,6 +745,7 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
                update_database.updated_db.software_map[index].software_name);
 
         set_exit(1);
+        on_update_crash();
         return;
     }
 
