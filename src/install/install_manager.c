@@ -1,8 +1,8 @@
 #include "install_manager.h"
 #include "../arguments/debug/debug.h"
 #include "../utilities/utils.h"
-#include "src/configuration/configuration.h"
-#include "src/exit/exit.h"
+#include "..//configuration/configuration.h"
+#include "../exit/exit.h"
 #include <curl/curl.h>
 #include <curl/easy.h>
 #include <dirent.h>
@@ -426,6 +426,18 @@ bool install_software(char *package_name, bool dependency) {
                 break;
             }
 
+            dependency_instructions[i][strcspn(dependency_instructions[i],
+                                               "\n")] = '\0';
+            char dependency_name[512];
+            strcpy(dependency_name, dependency_instructions[i]);
+
+            strtok(dependency_name, " ");
+
+            if (strcmp(dependency_name, package_name) == 0) {
+                i++;
+                continue;
+            }
+
             printf(GRAY
                    "-> Installing dependency %s for the package %s\n" RESET,
                    dependency_instructions[i], package_name);
@@ -435,8 +447,8 @@ bool install_software(char *package_name, bool dependency) {
 
                 do {
                     printf(YELLOW "-> Do you want to install the dependency "
-                                  "%s? (y/n)\n" RESET,
-                           package_name);
+                                  "%s? (y/n): " RESET,
+                           dependency_name);
                     scanf(" %c", &resp);
                 } while (resp != 'y' && resp != 'Y' && resp != 'n' &&
                          resp != 'N');
@@ -447,7 +459,8 @@ bool install_software(char *package_name, bool dependency) {
                     break;
                 }
             }
-            install_software(dependency_instructions[i], true);
+
+            install_software(dependency_name, true);
 
             i++;
             if (i >= 500) {
@@ -458,6 +471,7 @@ bool install_software(char *package_name, bool dependency) {
     }
 
     // build_instructions
+    if (is_debug()) printf("Execution build_instructions for %s\n", package_name);
     i = 0;
     while (true) {
         if (strlen(build_instructions[i]) <= 0) {

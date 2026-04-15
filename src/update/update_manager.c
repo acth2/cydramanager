@@ -573,9 +573,13 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
                     char resp;
 
                     do {
-                        printf(YELLOW "-> Do you want to install the dependency %s? (y/n)\n" RESET, update_database.updated_db.software_map[j].software_name);
+                        printf(YELLOW "-> Do you want to install the "
+                                      "dependency %s? (y/n): " RESET,
+                               update_database.updated_db.software_map[j]
+                                   .software_name);
                         scanf(" %c", &resp);
-                    } while (resp != 'y' && resp != 'Y' && resp != 'n' && resp != 'N');
+                    } while (resp != 'y' && resp != 'Y' && resp != 'n' &&
+                             resp != 'N');
 
                     if (resp == 'n' || resp == 'N') {
                         printf(GRAY "Skipping dependency.\n" RESET);
