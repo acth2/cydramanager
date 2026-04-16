@@ -4,7 +4,7 @@
 #include "configuration/configuration.h"
 #include "exit/exit.h"
 #include "install/install_manager.h"
-#include "src/remove/remove_manager.h"
+#include "remove/remove_manager.h"
 #include "update/update_manager.h"
 #include "utilities/utils.h"
 #include <curl/curl.h>
@@ -100,29 +100,30 @@ int main(int argc, char *argv[]) {
             }
 
             case INSTALL: {
-                if (i + 1 < argc) {
-                    char *package_name = argv[i + 1];
-                    install_software(package_name, false);
+                if (i + 1 < argc && arg2enum(argv[i + 1]) == UNK) {
+                    char cwd[1024];
+                    getcwd(cwd, sizeof(cwd));
 
-                    check_crash();
-
-                    i++;
+                    while (i + 1 < argc && arg2enum(argv[i + 1]) == UNK) {
+                        i++;
+                        install_software(argv[i], false);
+                        check_crash();
+                        chdir(cwd);
+                    }
                 } else {
                     printf(RED "Error: you need to provide a package name "
-                               "in order "
-                               "to install it.\n" RESET);
+                               "in order to install it.\n" RESET);
                 }
                 break;
             }
 
             case UNINSTALL: {
-                if (i + 1 < argc) {
-                    char *package_name = argv[i + 1];
-                    remove_software(package_name);
-
-                    check_crash();
-
-                    i++;
+                if (i + 1 < argc && arg2enum(argv[i + 1]) == UNK) {
+                    while (i + 1 < argc && arg2enum(argv[i + 1]) == UNK) {
+                        i++;
+                        remove_software(argv[i]);
+                        check_crash();
+                    }
                 } else {
                     printf(RED "Error: you need to provide a package name "
                                "in order "
