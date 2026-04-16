@@ -13,6 +13,9 @@ char* getTmpFolder();
 char* getParallelJobs();
 char* getDefaultArg();
 
+int   getCustomMirrorsCounter();
+char* getCustomMirror(int index);
+
 void change_configuration(char *path);
 
 enum DEPENDENCY_HANDLING {

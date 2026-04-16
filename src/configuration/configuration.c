@@ -1,7 +1,7 @@
 #include "configuration.h"
+#include "../exit/exit.h"
+#include "../main.h"
 #include "../utilities/utils.h"
-#include "src/exit/exit.h"
-#include "src/main.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -21,7 +21,7 @@ char *getSoftwareMirror() {
     }
 
     char buffer[512];
-    char* keyword = "software-mirror=";
+    char *keyword = "software-mirror=";
     bool validate = false;
     static char output[512];
     while (fgets(buffer, sizeof(buffer), configuration)) {
@@ -64,7 +64,7 @@ char *getUpdateArchive() {
 
     char buffer[512];
     bool validate = false;
-    char* keyword = "update-archive-db=";
+    char *keyword = "update-archive-db=";
     static char output[512];
     while (fgets(buffer, sizeof(buffer), configuration)) {
         if (buffer[0] == '#') {
@@ -81,9 +81,11 @@ char *getUpdateArchive() {
     fclose(configuration);
 
     if (!validate) {
-        printf(RED "Error: the update-archive key is not found in the configuration "
-                   "%s\n" RESET,
-               raw_configuration);
+        printf(
+            RED
+            "Error: the update-archive key is not found in the configuration "
+            "%s\n" RESET,
+            raw_configuration);
 
         set_exit(1);
         check_crash();
@@ -106,7 +108,7 @@ char *getUpdateArchiveInstructions() {
 
     char buffer[512];
     bool validate = false;
-    char* keyword = "update-archive-db-instruc=";
+    char *keyword = "update-archive-db-instruc=";
     static char output[512];
     while (fgets(buffer, sizeof(buffer), configuration)) {
         if (buffer[0] == '#') {
@@ -123,7 +125,8 @@ char *getUpdateArchiveInstructions() {
     fclose(configuration);
 
     if (!validate) {
-        printf(RED "Error: the update-archive-instructions key is not found in the configuration "
+        printf(RED "Error: the update-archive-instructions key is not found in "
+                   "the configuration "
                    "%s\n" RESET,
                raw_configuration);
 
@@ -148,7 +151,7 @@ char *getTmpFolder() {
 
     char buffer[512];
     bool validate = false;
-    char* keyword = "tmp-folder=";
+    char *keyword = "tmp-folder=";
     static char output[512];
     while (fgets(buffer, sizeof(buffer), configuration)) {
         if (buffer[0] == '#') {
@@ -165,8 +168,9 @@ char *getTmpFolder() {
     fclose(configuration);
 
     if (!validate) {
-        printf(RED "Error: the tmp-folder key is not found in the configuration "
-                   "%s\n" RESET,
+        printf(RED
+               "Error: the tmp-folder key is not found in the configuration "
+               "%s\n" RESET,
                raw_configuration);
 
         set_exit(1);
@@ -190,7 +194,7 @@ char *getParallelJobs() {
 
     char buffer[512];
     bool validate = false;
-    char* keyword = "parallel-jobs=";
+    char *keyword = "parallel-jobs=";
     static char output[512];
     while (fgets(buffer, sizeof(buffer), configuration)) {
         if (buffer[0] == '#') {
@@ -207,8 +211,9 @@ char *getParallelJobs() {
     fclose(configuration);
 
     if (!validate) {
-        printf(RED "Error: the parallel-jobs key is not found in the configuration "
-                   "%s\n" RESET,
+        printf(RED
+               "Error: the parallel-jobs key is not found in the configuration "
+               "%s\n" RESET,
                raw_configuration);
 
         set_exit(1);
@@ -233,7 +238,7 @@ enum DEPENDENCY_HANDLING getDepedencyHandling() {
     char buffer[512];
     bool validate = false;
     static enum DEPENDENCY_HANDLING result = NORMAL;
-    char* keyword = "dependency-handling=";
+    char *keyword = "dependency-handling=";
     char output[512];
     while (fgets(buffer, sizeof(buffer), configuration)) {
         if (buffer[0] == '#') {
@@ -253,7 +258,7 @@ enum DEPENDENCY_HANDLING getDepedencyHandling() {
                 result = ASK;
                 break;
             }
-            
+
             result = IGNORE;
             break;
         }
@@ -261,7 +266,8 @@ enum DEPENDENCY_HANDLING getDepedencyHandling() {
     fclose(configuration);
 
     if (!validate) {
-        printf(RED "Error: the dependency-handling key is not found in the configuration "
+        printf(RED "Error: the dependency-handling key is not found in the "
+                   "configuration "
                    "%s\n" RESET,
                raw_configuration);
 
@@ -286,7 +292,7 @@ char *getDefaultArg() {
 
     char buffer[512];
     bool validate = false;
-    char* keyword = "default-arg=";
+    char *keyword = "default-arg=";
     static char output[512];
     while (fgets(buffer, sizeof(buffer), configuration)) {
         if (buffer[0] == '#') {
@@ -303,8 +309,9 @@ char *getDefaultArg() {
     fclose(configuration);
 
     if (!validate) {
-        printf(RED "Error: the default-arg key is not found in the configuration "
-                   "%s\n" RESET,
+        printf(RED
+               "Error: the default-arg key is not found in the configuration "
+               "%s\n" RESET,
                raw_configuration);
 
         set_exit(1);
@@ -313,6 +320,61 @@ char *getDefaultArg() {
     }
 
     return output;
+}
+
+int getCustomMirrorsCounter() {
+    FILE *configuration = fopen(raw_configuration, "r");
+    if (!configuration) {
+        set_exit(1);
+        check_crash();
+    }
+
+    int detected_mirrors = 0;
+    char buffer[2048];
+    while (fgets(buffer, sizeof(buffer), configuration)) {
+        if (buffer[0] == '#') {
+            continue;
+        }
+
+        if (strstr(buffer, "custom-mirror=") != NULL) {
+            detected_mirrors++;
+        }
+    }
+    fclose(configuration);
+
+    return detected_mirrors;
+}
+
+char *getCustomMirror(int index) {
+    FILE *configuration = fopen(raw_configuration, "r");
+    if (!configuration) {
+        set_exit(1);
+        check_crash();
+    }
+
+    char buffer[2048];
+    static char mirror[2050];
+    int current_instance = 0;
+    while (fgets(buffer, sizeof(buffer), configuration)) {
+        if (buffer[0] == '#') {
+            continue;
+        }
+
+        if (strstr(buffer, "custom-mirror") != NULL) {
+            if (current_instance == index) {
+                strcpy(mirror, buffer);
+                char *token = strtok(mirror, "=");
+                token = strtok(NULL, "=");
+                if (token == NULL) break;
+                token[strcspn(token, "\n")] = '\0';
+                strcpy(mirror, token);
+                break;
+            }
+            current_instance++;
+        }
+    }
+
+    return mirror;
 }
 
 void change_configuration(char *path) {
