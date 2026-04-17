@@ -3,6 +3,7 @@
 #include "../main.h"
 #include "../utilities/utils.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 char raw_configuration[] = "/etc/cydramanager.d/configuration.conf";
@@ -353,7 +354,7 @@ char *getCustomMirror(int index) {
     }
 
     char buffer[2048];
-    static char mirror[2050];
+    char* mirror = malloc(2500);
     int current_instance = 0;
     while (fgets(buffer, sizeof(buffer), configuration)) {
         if (buffer[0] == '#') {
@@ -362,12 +363,11 @@ char *getCustomMirror(int index) {
 
         if (strstr(buffer, "custom-mirror") != NULL) {
             if (current_instance == index) {
-                strcpy(mirror, buffer);
-                char *token = strtok(mirror, "=");
-                token = strtok(NULL, "=");
-                if (token == NULL) break;
-                token[strcspn(token, "\n")] = '\0';
-                strcpy(mirror, token);
+                char *eq = strchr(buffer, '=');
+                if (eq == NULL) break;
+                eq++;
+                eq[strcspn(eq, "\n")] = '\0';
+                strcpy(mirror, eq);
                 break;
             }
             current_instance++;

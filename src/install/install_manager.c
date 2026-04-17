@@ -73,9 +73,8 @@ bool install_software(char *package_name, bool dependency) {
         set_exit(1);
         return false;
     }
-    printf(GRAY
-           "-> Getting the informations of the package %s from the current "
-           "mirror.\n" RESET,
+    printf(GRAY "-> Getting the informations of the package %s from the "
+                "mirror(s).\n" RESET,
            package_name);
 
     curl_easy_setopt(curl, CURLOPT_URL, package_link);
@@ -111,18 +110,103 @@ bool install_software(char *package_name, bool dependency) {
 
     if (is_debug())
         printf("version: %s, link: %s\n", package_version, package_link);
+
+    if (strcmp(package_version, "404: Not Found") == 0) {
+        if (getCustomMirrorsCounter() == 0) {
+            if (!dependency) {
+                printf(RED "Error: The package you asked to install does not "
+                           "exist in the "
+                           "current mirror.\n" RESET);
+
+                set_exit(1);
+                return false;
+            } else {
+                printf("Warning: The dependency %s is not found in the current "
+                       "mirror\n",
+                       package_name);
+            }
+        }
+    }
+
+    if (getCustomMirrorsCounter() != 0 &&
+        strcmp(package_version, "404: Not Found") == 0) {
+
+        for (int i = 0; i < getCustomMirrorsCounter(); i++) {
+            char *current_mirror_scope = getCustomMirror(i);
+            strcpy(mirror_link, current_mirror_scope);
+
+            snprintf(package_link, sizeof(package_link), "%s/%s", mirror_link,
+                     package_name);
+
+            snprintf(package_instructions_path,
+                     sizeof(package_instructions_path), "%s/instructions",
+                     getTmpFolder());
+            snprintf(package_path, sizeof(package_path), "%s/%s",
+                     getTmpFolder(), package_name);
+
+            CURL *curl = curl_easy_init();
+            FILE *file = fopen(package_path, "wb");
+
+            if (!curl || !file) {
+                printf(RED "Error: Unexpected behaviour during the "
+                           "installation of the "
+                           "software %s\n" RESET,
+                       package_name);
+
+                set_exit(1);
+                free(current_mirror_scope);
+                return false;
+            }
+
+            curl_easy_setopt(curl, CURLOPT_URL, package_link);
+
+            curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+            curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
+
+            CURLcode cperf = curl_easy_perform(curl);
+            curl_easy_cleanup(curl);
+
+            if (cperf == CURLE_COULDNT_CONNECT) {
+                printf(RED "Error: You are not connected to the internet, the "
+                           "installation "
+                           "cannot happen.\n" RESET);
+
+                set_exit(1);
+                free(current_mirror_scope);
+                return false;
+            }
+
+            if (cperf != CURLE_OK) {
+                printf(RED "Error: an unexpected error occured.\n" RESET);
+
+                set_exit(1);
+                free(current_mirror_scope);
+                return false;
+            }
+            fclose(file);
+
+            FILE *package_version_file = fopen(package_path, "r");
+            fgets(package_version, 256, package_version_file);
+            fclose(package_version_file);
+            package_version[strcspn(package_version, "\n")] = '\0';
+
+            free(current_mirror_scope);
+            if (strcmp(package_version, "404: Not found") != 0) {
+                break;
+            }
+        }
+    }
+
     if (strcmp(package_version, "404: Not Found") == 0) {
         if (!dependency) {
-            printf(
-                RED
-                "Error: The package you asked to install does not exist in the "
-                "current mirror.\n" RESET);
+            printf(RED "Error: The package you asked to install does not "
+                       "exist in the mirror(s).\n" RESET);
 
             set_exit(1);
             return false;
         } else {
-            printf("Warning: The dependency %s is not found in the current "
-                   "mirror\n",
+            printf("Warning: The dependency %s is not found in the "
+                   "mirror(s)\n",
                    package_name);
         }
     }
@@ -569,6 +653,8 @@ bool install_software(char *package_name, bool dependency) {
         if (strstr(read, pattern)) {
             continue;
         }
+
+        if ()
 
         fputs(read, write_user_software_db);
     }

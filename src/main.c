@@ -21,10 +21,6 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-   for (int i = 0; i < getCustomMirrorsCounter(); i++) {
-       printf("%d: %s\n", i, getCustomMirror(i));
-   } 
-
     curl_global_init(CURL_GLOBAL_SSL);
     if (argc > 1) {
         for (int i = 1; i < argc; i++) {
