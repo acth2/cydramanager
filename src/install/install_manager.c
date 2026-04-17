@@ -654,8 +654,6 @@ bool install_software(char *package_name, bool dependency) {
             continue;
         }
 
-        if ()
-
         fputs(read, write_user_software_db);
     }
 
