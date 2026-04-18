@@ -408,7 +408,7 @@ bool install_software(char *package_name, bool dependency) {
                 set_exit(1);
                 return NULL;
             } else {
-                snprintf(jobs, sizeof(jobs), "%ld", (cores / 2));
+                snprintf(jobs, sizeof(jobs), "%ld", (cores));
             }
         }
     }

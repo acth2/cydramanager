@@ -3,7 +3,7 @@
 #include "../configuration/configuration.h"
 #include "../exit/exit.h"
 #include "../utilities/utils.h"
-#include "src/main.h"
+#include "../main.h"
 #include <curl/curl.h>
 #include <dirent.h>
 #include <stdbool.h>
@@ -436,7 +436,7 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
                    "system.\n");
             strcpy(jobs, "");
         } else {
-            snprintf(jobs, sizeof(jobs), "%ld", (cores / 2));
+            snprintf(jobs, sizeof(jobs), "%ld", (cores));
         }
     } else {
         char *endptr;
