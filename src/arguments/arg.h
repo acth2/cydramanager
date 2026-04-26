@@ -9,6 +9,7 @@ static const char *update_args[] =    { "--update",    "-update",    "update",  
 static const char *version_args[] =   { "--version",   "-version",   "version",   "-v" };
 static const char *install_args[] =   { "--install",   "-install",   "install",   "-i" };
 static const char *uninstall_args[] = { "--remove",    "-remvoe",    "remove",    "-r" };
+static const char *list_args[] =      { "--list",      "-list",      "list",      "-l" };
 static const char *debug_args[] =     { "--debug",     "-debug",                  "-d" };
 static const char *conf_args[] =      { "--conf"       "-conf",                   "-c" };
 
@@ -21,6 +22,7 @@ enum ARG {
     VERSION,
     INSTALL,
     UNINSTALL,
+    LIST,
 
     ARG_DEBUG,
     ARG_CONF
@@ -49,6 +51,9 @@ static inline enum ARG arg2enum(const char *arg) {
         return UNINSTALL;
     if (contains(arg, conf_args))
         return ARG_CONF;
+     if (contains(arg, list_args))
+        return LIST;
+    
     return UNK;
 }
 

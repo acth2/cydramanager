@@ -28,6 +28,7 @@ executable(
         'src/arguments/debug/debug.c',
         'src/install/install_manager.c',
         'src/remove/remove_manager.c',
+        'src/list/list_manager.c',
         'src/utilities/utils.c',
         'src/exit/exit.c',
         'src/configuration/configuration.c'

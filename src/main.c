@@ -6,6 +6,7 @@
 #include "install/install_manager.h"
 #include "remove/remove_manager.h"
 #include "update/update_manager.h"
+#include "list/list_manager.h"
 #include "utilities/utils.h"
 #include <curl/curl.h>
 #include <stdbool.h>
@@ -132,6 +133,12 @@ int main(int argc, char *argv[]) {
                 break;
             }
 
+            case LIST: {
+                print_installed_softwares();
+                check_crash();
+                break;
+            }
+
             case UNK: {
                 printf("unknown command %s, use --help to see available "
                        "options.\n",
@@ -159,10 +166,10 @@ void print_help() {
     printf(YELLOW "   install    " RESET "Install a package in the system\n");
     printf(YELLOW "   remove     " RESET "Remove a package in the system\n");
     printf(YELLOW "   version    " RESET "Show cydramanager version\n");
+    printf(YELLOW "   list       " RESET "Show the packages installed\n");
     printf(RESET "\nArguments:\n");
     printf(YELLOW "   -debug     " RESET "Show detailed informations\n");
-    printf(YELLOW "   -conf      " RESET
-                  "Set an explicit configuration file\n");
+    printf(YELLOW "   -conf      " RESET "Set an explicit configuration file\n");
 };
 
 void print_version() { printf(RESET "cydramanager" YELLOW " 1.1.0\n" RESET); }
