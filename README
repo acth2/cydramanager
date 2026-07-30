@@ -6,3 +6,5 @@ TODO:
 
 ARGUMENTS:
  - -Dconfgen=true/false - Install the configuration file with the package manager (true by default)
+
+PS: The code is ugly i know. It's my first-ever C project and it's the project that taught me C as a whole. I will try to clean up the code!
