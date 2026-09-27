@@ -2,6 +2,7 @@
 #define UTILS_H
 
 #include <stdio.h>
+#include <stdbool.h>
 
 #define RED     "\033[31m"
 #define YELLOW  "\033[33m"
@@ -14,5 +15,6 @@ void replace_proc(char *str, char* replace);
 int is_number(const char *str);
 int is_empty(FILE *f);
 long long get_dir_size(const char *path);
+bool read_line_binary(FILE *fptr, char *buffer, size_t capacity);
 
 #endif

@@ -383,7 +383,17 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
     char line_cleaned[512];
     int step = 0;
     INSTRUCTION_MODE mode = NONE;
-    while (fgets(line, sizeof(line), fptr) != NULL) {
+    while (read_line_binary(fptr, line, sizeof(line))) {
+        if (is_debug()) {
+            printf("[DEBUG] RAW LINE: ");
+
+            for (size_t k = 0; k < strlen(line); k++) {
+                printf("%02x ", (unsigned char)line[k]);
+            }
+
+            printf(" | <%s>\n", line);
+        }
+
         strcpy(line_cleaned, line);
 
         if (strcmp(space_clean(line_cleaned), "build['") == 0) {
@@ -607,12 +617,34 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
             for (int j = 0; j < *(update_database.updated_db.software_counter);
                  j++) {
                 token = strtok(dependency_instructions[i], separator);
+
+                if (token == NULL) {
+                    if (is_debug())
+                        printf(GRAY "[DEBUG] Missing dependency name on line "
+                                    "%d\n" RESET,
+                               i);
+                    break;
+                }
+
                 if (strcmp(token, update_database.updated_db.software_map[j]
                                       .software_name) != 0)
                     continue;
+
                 token = strtok(NULL, separator);
+
+                if (token == NULL) {
+                    if (is_debug())
+                        printf(GRAY "[DEBUG] Missing dependency version for "
+                                    "'%s' on line %d\n" RESET,
+                               update_database.updated_db.software_map[j]
+                                   .software_name,
+                               i);
+                    break;
+                }
+
                 if (strcmp(token, update_database.updated_db.software_map[j]
                                       .software_version) == 0) {
+
                     printf(RESET "Dependency %s already up to date, skipping\n",
                            update_database.updated_db.software_map[j]
                                .software_name);

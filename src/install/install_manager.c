@@ -316,7 +316,7 @@ bool install_software(char *package_name, bool dependency) {
     char line_cleaned[512];
     int step = 0;
     INSTRUCTION_MODE mode = NONE;
-    while (fgets(line, sizeof(line), instructions_reader) != NULL) {
+    while (read_line_binary(instructions_reader, line, sizeof(line))) {
         strcpy(line_cleaned, line);
 
         if (strcmp(space_clean(line_cleaned), "build['") == 0) {

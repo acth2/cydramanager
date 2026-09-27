@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <dirent.h>
+#include "../arguments/debug/debug.h"
 #include <sys/stat.h>
 
 char *space_clean(char *str) {
@@ -82,4 +83,34 @@ long long get_dir_size(const char *path) {
 
     closedir(dir);
     return total;
+}
+
+bool read_line_binary(FILE *fptr, char *buffer, size_t capacity)
+{
+    size_t length = 0;
+    int c;
+
+    while (length < capacity - 1) {
+        c = fgetc(fptr);
+
+        if (c == EOF)
+            break;
+
+        if (c == '\n') {
+            break;
+        }
+
+        if (c == '\0') {
+            if (is_debug()) {
+                printf(GRAY "[DEBUG] Warning: replaced lost NUL in instruction line\n" RESET);
+            }
+            buffer[length++] = ' ';
+        } else {
+            buffer[length++] = (char)c;
+        }
+    }
+
+    buffer[length] = '\0';
+
+    return length > 0 || c != EOF;
 }

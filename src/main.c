@@ -4,9 +4,9 @@
 #include "configuration/configuration.h"
 #include "exit/exit.h"
 #include "install/install_manager.h"
+#include "list/list_manager.h"
 #include "remove/remove_manager.h"
 #include "update/update_manager.h"
-#include "list/list_manager.h"
 #include "utilities/utils.h"
 #include <curl/curl.h>
 #include <stdbool.h>
@@ -21,7 +21,6 @@ int main(int argc, char *argv[]) {
                    "privileges.\n" RESET);
         return 1;
     }
-
 
     curl_global_init(CURL_GLOBAL_SSL);
     if (argc > 1) {
@@ -81,11 +80,14 @@ int main(int argc, char *argv[]) {
 
             case UPDATE: {
                 bool isSpecefic = !strstr(argv[i + 1], "-");
-                char *program;
+                char *program = NULL;
 
-                if (isSpecefic) { 
-                    printf(GRAY "-> Updating specefic package %s\n" RESET, argv[i + 1]);
+                if (isSpecefic) {
+                    printf(GRAY "-> Updating specefic package %s\n" RESET,
+                           argv[i + 1]);
+
                     program = argv[i + 1];
+                    i++;
                 }
 
                 SoftwareDB db = get_current_database("/etc/cydramanager.d/sdb");
@@ -93,29 +95,56 @@ int main(int argc, char *argv[]) {
 
                 check_crash();
 
+                printf("DEBUG: before apply_software_db\n");
+
                 if (!apply_software_db(db)) {
                     printf(RED "Error: The database could not have been "
                                "updated.\n" RESET);
+
+                    free(udb.updated_db.software_map);
+                    free(udb.updated_db.software_counter);
+                    free(udb.outdated_index);
+
+                    free(db.software_map);
+                    free(db.software_counter);
+
                     break;
                 }
 
+                printf("DEBUG: apply_software_db succeeded\n");
+
                 if (!isSpecefic) {
-                    for (int i = 0; i < udb.outdated_size; i++) {
-                        int index = udb.outdated_index[i];
-                        update_package(udb, index, i <= 0 ? false : true);
+                    for (int j = 0; j < udb.outdated_size; j++) {
+                        int index = udb.outdated_index[j];
+                        update_package(udb, index, j <= 0 ? false : true);
                     }
                 } else {
-                    for (int i = 0; i < udb.outdated_size; i++) {
-                        int index = udb.outdated_index[i];
-                        if (strcmp(udb.updated_db.software_map[index].software_name, program) == 0) {
-                               update_package(udb, index, false);
-                               break;
+                    for (int j = 0; j < udb.outdated_size; j++) {
+                        int index = udb.outdated_index[j];
+
+                        printf(
+                            "DEBUG: candidate[%d] = '%s'\n", j,
+                            udb.updated_db.software_map[index].software_name);
+
+                        if (strcmp(udb.updated_db.software_map[index]
+                                       .software_name,
+                                   program) == 0) {
+                            printf("DEBUG: FOUND %s at index %d\n", program,
+                                   index);
+
+                            update_package(udb, index, false);
+                            break;
                         }
                     }
                 }
 
                 free(udb.updated_db.software_map);
+                free(udb.updated_db.software_counter);
                 free(udb.outdated_index);
+
+                free(db.software_map);
+                free(db.software_counter);
+
                 break;
             }
 
@@ -188,7 +217,8 @@ void print_help() {
     printf(YELLOW "   list       " RESET "Show the packages installed\n");
     printf(RESET "\nArguments:\n");
     printf(YELLOW "   -debug     " RESET "Show detailed informations\n");
-    printf(YELLOW "   -conf      " RESET "Set an explicit configuration file\n");
+    printf(YELLOW "   -conf      " RESET
+                  "Set an explicit configuration file\n");
 }
 
 void print_version() { printf(RESET "cydramanager" YELLOW " 1.1.0\n" RESET); }
