@@ -22,6 +22,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+
     curl_global_init(CURL_GLOBAL_SSL);
     if (argc > 1) {
         for (int i = 1; i < argc; i++) {
@@ -64,7 +65,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (is_debug() && getDepedencyHandling() != IGNORE)
-            printf(RESET "Handling dependencies\n");
+            printf(GRAY "[DEBUG] Handling dependencies\n" RESET);
 
         for (int i = 1; i < argc; i++) {
             switch (arg2enum(argv[i])) {
@@ -79,6 +80,14 @@ int main(int argc, char *argv[]) {
             }
 
             case UPDATE: {
+                bool isSpecefic = !strstr(argv[i + 1], "-");
+                char *program;
+
+                if (isSpecefic) { 
+                    printf(GRAY "-> Updating specefic package %s\n" RESET, argv[i + 1]);
+                    program = argv[i + 1];
+                }
+
                 SoftwareDB db = get_current_database("/etc/cydramanager.d/sdb");
                 UpdatedDB udb = get_updated_database(db);
 
@@ -90,9 +99,19 @@ int main(int argc, char *argv[]) {
                     break;
                 }
 
-                for (int i = 0; i < udb.outdated_size; i++) {
-                    int index = udb.outdated_index[i];
-                    update_package(udb, index, i <= 0 ? false : true);
+                if (!isSpecefic) {
+                    for (int i = 0; i < udb.outdated_size; i++) {
+                        int index = udb.outdated_index[i];
+                        update_package(udb, index, i <= 0 ? false : true);
+                    }
+                } else {
+                    for (int i = 0; i < udb.outdated_size; i++) {
+                        int index = udb.outdated_index[i];
+                        if (strcmp(udb.updated_db.software_map[index].software_name, program) == 0) {
+                               update_package(udb, index, false);
+                               break;
+                        }
+                    }
                 }
 
                 free(udb.updated_db.software_map);
@@ -170,7 +189,7 @@ void print_help() {
     printf(RESET "\nArguments:\n");
     printf(YELLOW "   -debug     " RESET "Show detailed informations\n");
     printf(YELLOW "   -conf      " RESET "Set an explicit configuration file\n");
-};
+}
 
 void print_version() { printf(RESET "cydramanager" YELLOW " 1.1.0\n" RESET); }
 

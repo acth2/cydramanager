@@ -109,7 +109,7 @@ bool install_software(char *package_name, bool dependency) {
     package_version[strcspn(package_version, "\n")] = '\0';
 
     if (is_debug())
-        printf("version: %s, link: %s\n", package_version, package_link);
+        printf("[DEBUG] version: %s, link: %s\n", package_version, package_link);
 
     if (strcmp(package_version, "404: Not Found") == 0) {
         if (getCustomMirrorsCounter() == 0) {
@@ -394,7 +394,7 @@ bool install_software(char *package_name, bool dependency) {
         long askedJobs = strtol(getParallelJobs(), &endptr, 10);
         if (*endptr == '\0') {
             if (is_debug())
-                printf(RESET "Using %ld jobs as asked on the configuration.\n",
+                printf(RESET "[DEBUG] Using %ld jobs as asked on the configuration.\n",
                        askedJobs);
 
             snprintf(jobs, sizeof(jobs), "%s", getParallelJobs());
@@ -565,7 +565,7 @@ bool install_software(char *package_name, bool dependency) {
 
     // build_instructions
     if (is_debug())
-        printf("Execution build_instructions for %s\n", package_name);
+        printf("[DEBUG] Execution build_instructions for %s\n", package_name);
     i = 0;
     while (true) {
         if (strlen(build_instructions[i]) <= 0) {
@@ -588,7 +588,7 @@ bool install_software(char *package_name, bool dependency) {
         }
 
         if (system(build_instructions[i]) != 0 && is_debug()) {
-            printf(RED "Error at build instructions numero %d for %s\n" RESET,
+            printf(RED "[DEBUG] Error at build instructions numero %d for %s\n" RESET,
                    i, package_name);
 
             set_exit(1);
@@ -596,7 +596,7 @@ bool install_software(char *package_name, bool dependency) {
         }
 
         if (is_debug())
-            printf("Success at executing %s at build step.\n",
+            printf("[DEBUG] Success at executing %s at build step.\n",
                    build_instructions[i]);
 
         i++;
@@ -619,14 +619,14 @@ bool install_software(char *package_name, bool dependency) {
             strcat(install_instructions[i], " > /dev/null 2>&1");
 
         if (system(install_instructions[i]) != 0 && is_debug()) {
-            printf("Error at install instructions numero %d for %s\n", i,
+            printf("[DEBUG] Error at install instructions numero %d for %s\n", i,
                    package_name);
 
             set_exit(1);
             break;
         }
         if (is_debug())
-            printf("Success at executing %s at install step.\n",
+            printf("[DEBUG] Success at executing %s at install step.\n",
                    install_instructions[i]);
 
         i++;

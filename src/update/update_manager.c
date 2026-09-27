@@ -2,8 +2,8 @@
 #include "../arguments/debug/debug.h"
 #include "../configuration/configuration.h"
 #include "../exit/exit.h"
-#include "../utilities/utils.h"
 #include "../main.h"
+#include "../utilities/utils.h"
 #include <curl/curl.h>
 #include <dirent.h>
 #include <stdbool.h>
@@ -78,8 +78,24 @@ UpdatedDB get_updated_database(SoftwareDB old_instance) {
     check_crash();
 
     UpdatedDB updated_instance = {0};
+    int count = *old_instance.software_counter;
     updated_instance.updated_db.software_map =
         malloc(*(old_instance.software_counter) * sizeof(SoftwareMap));
+
+    updated_instance.updated_db.software_counter = malloc(sizeof(int));
+
+    if (updated_instance.updated_db.software_map == NULL ||
+        updated_instance.updated_db.software_counter == NULL) {
+        free(updated_instance.updated_db.software_map);
+        free(updated_instance.updated_db.software_counter);
+
+        updated_instance.updated_db.software_map = NULL;
+        updated_instance.updated_db.software_counter = NULL;
+
+        return updated_instance;
+    }
+
+    *updated_instance.updated_db.software_counter = count;
 
     char *cache_dir = getTmpFolder();
     char cache_dir_clean_cmd[512];
@@ -339,7 +355,8 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
 
     FILE *fptr = fopen(instructions_path, "r");
     if (fptr == NULL) {
-        printf(RED "Error: cannot open the instructions file to build %s" RESET,
+        printf(RED
+               "Error: cannot open the instructions file to build %s\n" RESET,
                update_database.updated_db.software_map[index].software_name);
 
         set_exit(1);
@@ -444,8 +461,10 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
         long askedJobs = strtol(getParallelJobs(), &endptr, 10);
         if (*endptr == '\0') {
             if (is_debug())
-                printf(RESET "Using %ld jobs as asked on the configuration.\n",
-                       askedJobs);
+                printf(
+                    RESET
+                    "[DEBUG] Using %ld jobs as asked on the configuration.\n",
+                    askedJobs);
 
             snprintf(jobs, sizeof(jobs), "%s", getParallelJobs());
         } else {
@@ -571,7 +590,21 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
                                                "\n")] = '\0';
             char *token;
             char *separator = " ";
-            for (int j = 0; j >= *(update_database.updated_db.software_counter);
+
+            if (is_debug()) {
+                printf("[DEBUG] software_counter ptr = %p\n",
+                       (void *)update_database.updated_db.software_counter);
+
+                printf("[DEBUG] software_map ptr = %p\n",
+                       (void *)update_database.updated_db.software_map);
+
+                printf("[DEBUG] software_counter value = %d\n",
+                       update_database.updated_db.software_counter
+                           ? *update_database.updated_db.software_counter
+                           : -1);
+            }
+
+            for (int j = 0; j < *(update_database.updated_db.software_counter);
                  j++) {
                 token = strtok(dependency_instructions[i], separator);
                 if (strcmp(token, update_database.updated_db.software_map[j]
@@ -645,7 +678,9 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
 
         if (system(build_instructions[i]) != 0 && is_debug()) {
             printf(
-                RED "Error at build instructions numero %d for %s\n" RESET, i,
+                RED
+                "[DEBUG] Error at build instructions numero %d for %s\n" RESET,
+                i,
                 update_database.updated_db.software_map[index].software_name);
 
             set_exit(1);
@@ -653,7 +688,7 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
         }
 
         if (is_debug())
-            printf("Success at executing %s at build step.\n",
+            printf("[DEBUG] Success at executing %s at build step.\n",
                    build_instructions[i]);
 
         i++;
@@ -677,14 +712,16 @@ void update_package(UpdatedDB update_database, int index, bool dependency) {
 
         if (system(install_instructions[i]) != 0 && is_debug()) {
             printf(
-                RED "Error at install instructions numero %d for %s\n" RESET, i,
+                RED "[DEBUG] Error at install instructions numero %d for "
+                    "%s\n" RESET,
+                i,
                 update_database.updated_db.software_map[index].software_name);
 
             set_exit(1);
             break;
         }
         if (is_debug())
-            printf(RESET "Success at executing %s at install step.\n",
+            printf(RESET "[DEBUG] Success at executing %s at install step.\n",
                    install_instructions[i]);
 
         i++;

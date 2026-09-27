@@ -79,12 +79,12 @@ bool remove_software(char *package_name) {
     while (fgets(db_buffer, sizeof(db_buffer), db_read)) {
         if (strstr(db_buffer, search) != 0) {
             if (is_debug())
-                printf("Erasing line %s\n", db_buffer);
+                printf("[DEBUG] Erasing line %s\n", db_buffer);
             continue;
         }
 
         if (is_debug())
-            printf("Saving line %s\n", db_buffer);
+            printf("[DEBUG] Saving line %s\n", db_buffer);
         fputs(db_buffer, db_write);
     }
     fclose(db_read);
